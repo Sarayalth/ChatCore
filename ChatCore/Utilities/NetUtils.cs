@@ -9,7 +9,7 @@ namespace ChatCore
     {
         public static IPEndPoint GetIPEndPointFromHostName(string hostName, int port, bool throwIfMoreThanOneIP = false)
         {
-            var addresses = System.Net.Dns.GetHostAddresses(hostName);
+            var addresses = Dns.GetHostAddresses(hostName);
             if (addresses.Length == 0)
             {
                 throw new ArgumentException(
