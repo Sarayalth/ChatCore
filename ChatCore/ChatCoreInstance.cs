@@ -7,17 +7,9 @@ using ChatCore.Services;
 using ChatCore.Services.Twitch;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
 using System.Reflection;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Net.Http;
 using ChatCore.Config;
-using System.Collections.Concurrent;
 using ChatCore.Logging;
 
 namespace ChatCore

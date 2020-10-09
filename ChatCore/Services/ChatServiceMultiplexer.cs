@@ -1,14 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using ChatCore.Interfaces;
 using ChatCore.Services.Twitch;
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Text;
 using System.Linq;
 using ChatCore.Models.Twitch;
-using ChatCore.Models;
 
 namespace ChatCore.Services
 {

@@ -3,8 +3,6 @@ using ChatCore.Models.Twitch;
 using ChatCore.Services.Twitch;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ChatCore
 {

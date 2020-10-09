@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ChatCore.Logging
+﻿namespace ChatCore.Logging
 {
     public enum CustomLogLevel
     {

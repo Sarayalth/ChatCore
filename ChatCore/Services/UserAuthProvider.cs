@@ -2,13 +2,9 @@
 using ChatCore.Interfaces;
 using ChatCore.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using ChatCore.Config;
 using System.Threading.Tasks;
-using System.Threading;
-using ChatCore.Models.OAuth;
 
 namespace ChatCore.Services
 {
