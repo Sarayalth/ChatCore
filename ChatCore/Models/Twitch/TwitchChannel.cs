@@ -1,5 +1,5 @@
 ﻿using ChatCore.Interfaces;
-using ChatCore.SimpleJSON;
+using ChatCore.Utilities;
 
 namespace ChatCore.Models.Twitch
 {

@@ -1,12 +1,12 @@
 ﻿using ChatCore.Interfaces;
 using ChatCore.Models.Twitch;
-using ChatCore.SimpleJSON;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using ChatCore.Utilities;
 
 namespace ChatCore.Services.Twitch
 {

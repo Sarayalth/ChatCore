@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ChatCore.Models;
 using System.Threading;
+using ChatCore.Utilities;
 
 namespace ChatCore.Services.Twitch
 {

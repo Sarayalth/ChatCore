@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace ChatCore
+namespace ChatCore.Utilities
 {
     public static class NetUtils
     {
