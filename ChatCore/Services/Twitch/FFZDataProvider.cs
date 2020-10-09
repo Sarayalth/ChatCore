@@ -23,12 +23,12 @@ namespace ChatCore.Services.Twitch
 
         public async Task<bool> TryRequestResources(string category)
         {
-            bool isGlobal = string.IsNullOrEmpty(category);
+            var isGlobal = string.IsNullOrEmpty(category);
 
             try
             {
                 _logger.LogDebug($"Requesting FFZ {(isGlobal ? "global " : "")}emotes{(isGlobal ? "." : $" for channel {category}")}.");
-                using (HttpRequestMessage msg = new HttpRequestMessage(HttpMethod.Get, isGlobal ? "https://api.frankerfacez.com/v1/set/global" : $"https://api.frankerfacez.com/v1/room/{category}"))
+                using (var msg = new HttpRequestMessage(HttpMethod.Get, isGlobal ? "https://api.frankerfacez.com/v1/set/global" : $"https://api.frankerfacez.com/v1/room/{category}"))
                 {
                     var resp = await _httpClient.SendAsync(msg);
                     if (!resp.IsSuccessStatusCode)
@@ -37,19 +37,19 @@ namespace ChatCore.Services.Twitch
                         return false;
                     }
 
-                    JSONNode json = JSON.Parse(await resp.Content.ReadAsStringAsync());
+                    var json = JSON.Parse(await resp.Content.ReadAsStringAsync());
                     if (!json["sets"].IsObject)
                     {
                         _logger.LogError("sets was not an object");
                         return false;
                     }
 
-                    int count = 0;
+                    var count = 0;
                     foreach (JSONObject o in isGlobal ? json["sets"]["3"]["emoticons"].AsArray : json["sets"][json["room"]["set"].ToString()]["emoticons"].AsArray)
                     {
-                        JSONObject urls = o["urls"].AsObject;
-                        string uri = urls[urls.Count - 1].Value;
-                        string identifier = isGlobal ? o["name"].Value : $"{category}_{o["name"].Value}";
+                        var urls = o["urls"].AsObject;
+                        var uri = urls[urls.Count - 1].Value;
+                        var identifier = isGlobal ? o["name"].Value : $"{category}_{o["name"].Value}";
                         Resources[identifier] = new ChatResourceData() { Uri = uri, IsAnimated = false, Type = isGlobal ? "FFZGlobalEmote" : "FFZChannelEmote" };
                         count++;
                     }

@@ -13,7 +13,7 @@ namespace ChatCore.Services
         {
             get
             {
-                HashSet<Assembly> assemblies = new HashSet<Assembly>();
+                var assemblies = new HashSet<Assembly>();
                 foreach(var service in _streamServiceManagers)
                 {
                     assemblies.UnionWith(service.RegisteredAssemblies);

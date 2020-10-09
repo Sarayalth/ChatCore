@@ -264,7 +264,7 @@ namespace ChatCore.Services.Twitch
             {
                 if (_currentMessageCount >= 20)
                 {
-                    float remainingMilliseconds = (float)(30000 - (DateTime.UtcNow - _lastResetTime).TotalMilliseconds);
+                    var remainingMilliseconds = (float)(30000 - (DateTime.UtcNow - _lastResetTime).TotalMilliseconds);
                     if (remainingMilliseconds > 0)
                     {
                         await Task.Delay((int)remainingMilliseconds);

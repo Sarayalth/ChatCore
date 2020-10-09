@@ -41,13 +41,13 @@ namespace ChatCore
         private static ConcurrentDictionary<int, string> _userColors = new ConcurrentDictionary<int, string>();
         public static string GetNameColor(string name)
         {
-            int nameHash = name.GetHashCode();
+            var nameHash = name.GetHashCode();
             if (!_userColors.TryGetValue(nameHash, out var nameColor))
             {
                 // Generate a psuedo-random color based on the users display name
-                Random rand = new Random(nameHash);
-                int argb = (rand.Next(255) << 16) + (rand.Next(255) << 8) + rand.Next(255);
-                string colorString = string.Format("#{0:X6}FF", argb);
+                var rand = new Random(nameHash);
+                var argb = (rand.Next(255) << 16) + (rand.Next(255) << 8) + rand.Next(255);
+                var colorString = string.Format("#{0:X6}FF", argb);
                 _userColors.TryAdd(nameHash, colorString);
                 nameColor = colorString;
             }
