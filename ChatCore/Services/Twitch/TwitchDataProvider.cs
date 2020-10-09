@@ -74,12 +74,12 @@ namespace ChatCore.Services.Twitch
                         Dictionary<string, IChatResourceData> ret = new Dictionary<string, IChatResourceData>();
                         _twitchBadgeProvider.Resources.ToList().ForEach(x =>
                         {
-                            var parts = x.Key.Split(new char[] { '_' }, 2);
+                            var parts = x.Key.Split(new[] { '_' }, 2);
                             ret[$"{x.Value.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}"] = x.Value;
                         });
                         _twitchCheermoteProvider.Resources.ToList().ForEach(x =>
                         {
-                            var parts = x.Key.Split(new char[] { '_' }, 2);
+                            var parts = x.Key.Split(new[] { '_' }, 2);
                             foreach (var tier in x.Value.Tiers)
                             {
                                 ret[$"{tier.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}{tier.MinBits}"] = tier;
@@ -87,12 +87,12 @@ namespace ChatCore.Services.Twitch
                         });
                         _bttvDataProvider.Resources.ToList().ForEach(x =>
                         {
-                            var parts = x.Key.Split(new char[] { '_' }, 2);
+                            var parts = x.Key.Split(new[] { '_' }, 2);
                             ret[$"{x.Value.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}"] = x.Value;
                         });
                         _ffzDataProvider.Resources.ToList().ForEach(x =>
                         {
-                            var parts = x.Key.Split(new char[] { '_' }, 2);
+                            var parts = x.Key.Split(new[] { '_' }, 2);
                             ret[$"{x.Value.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}"] = x.Value;
                         });
                         OnChannelResourceDataCached?.Invoke(ret);

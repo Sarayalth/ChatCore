@@ -54,9 +54,9 @@ namespace ChatCore.Config
                 {
                     return new List<string>();
                 }
-                return new List<string>(value.Replace(" ", "").ToLower().TrimEnd(new char[] { ',' }).Split(new char[] { ',' }));
+                return new List<string>(value.Replace(" ", "").ToLower().TrimEnd(new[] { ',' }).Split(new[] { ',' }));
             });
-            ConvertToString.TryAdd(typeof(List<string>), (fieldInfo, obj) => { return "\"" + string.Join(",", (List<string>)obj.GetFieldValue(fieldInfo.Name)).Replace(" ", "").ToLower().TrimEnd(new char[] { ',' }) + "\""; });
+            ConvertToString.TryAdd(typeof(List<string>), (fieldInfo, obj) => { return "\"" + string.Join(",", (List<string>)obj.GetFieldValue(fieldInfo.Name)).Replace(" ", "").ToLower().TrimEnd(new[] { ',' }) + "\""; });
         }
 
         private static bool CreateDynamicFieldConverter(FieldInfo fieldInfo)
@@ -180,7 +180,7 @@ namespace ChatCore.Config
                     if (match.Groups["Comment"].Success)
                     {
                         // Then store them in memory so we can write them back later on
-                        _comments[name] = match.Groups["Comment"].Value.TrimEnd(new char[] { '\n', '\r' });
+                        _comments[name] = match.Groups["Comment"].Value.TrimEnd(new[] { '\n', '\r' });
                     }
 
                     // If there's no value, continue on at this point
