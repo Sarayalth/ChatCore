@@ -1,8 +1,8 @@
 ﻿using ChatCore.Interfaces;
-using ChatCore.SimpleJSON;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using ChatCore.Utilities;
 
 namespace ChatCore.Models.Twitch
 {

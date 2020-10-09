@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Linq;
 using ChatCore.Models.Twitch;
+using ChatCore.Utilities;
 
 namespace ChatCore.Services
 {
