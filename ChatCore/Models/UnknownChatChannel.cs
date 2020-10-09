@@ -11,13 +11,13 @@ namespace ChatCore.Models
         public UnknownChatChannel() { }
         public UnknownChatChannel(string json)
         {
-            JSONNode obj = JSON.Parse(json);
+            var obj = JSON.Parse(json);
             if (obj.TryGetKey(nameof(Id), out var id)) { Id = id.Value; }
             if (obj.TryGetKey(nameof(Name), out var name)) { Name = name.Value; }
         }
         public JSONObject ToJson()
         {
-            JSONObject obj = new JSONObject();
+            var obj = new JSONObject();
             obj.Add(nameof(Id), new JSONString(Id));
             obj.Add(nameof(Name), new JSONString(Name));
             return obj;

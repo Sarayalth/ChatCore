@@ -22,7 +22,7 @@ namespace ChatCore.Services
             _streamingServices = streamingServices;
             _twitchService = (TwitchService)streamingServices.First(s => s is TwitchService);
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             foreach (var service in _streamingServices)
             {
                 service.OnTextMessageReceived += Service_OnTextMessageReceived;

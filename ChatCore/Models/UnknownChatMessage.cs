@@ -20,7 +20,7 @@ namespace ChatCore.Models
 
         public UnknownChatMessage(string json)
         {
-            JSONNode obj = JSON.Parse(json);
+            var obj = JSON.Parse(json);
             if (obj.TryGetKey(nameof(Id), out var id)) { Id = id.Value; }
             if (obj.TryGetKey(nameof(IsSystemMessage), out var isSystemMessage)) { IsSystemMessage = isSystemMessage.AsBool; }
             if (obj.TryGetKey(nameof(IsActionMessage), out var isActionMessage)) { IsActionMessage = isActionMessage.AsBool; }
@@ -31,7 +31,7 @@ namespace ChatCore.Models
             if (obj.TryGetKey(nameof(Channel), out var channel)) { Channel = new UnknownChatChannel(channel.ToString()); }
             if (obj.TryGetKey(nameof(Emotes), out var emotes))
             {
-                List<IChatEmote> emoteList = new List<IChatEmote>();
+                var emoteList = new List<IChatEmote>();
                 foreach (var emote in emotes.AsArray)
                 {
                     if (emote.Value.TryGetKey(nameof(IChatEmote.Id), out var emoteNode))
@@ -44,7 +44,7 @@ namespace ChatCore.Models
         }
         public JSONObject ToJson()
         {
-            JSONObject obj = new JSONObject();
+            var obj = new JSONObject();
             obj.Add(nameof(Id), new JSONString(Id));
             obj.Add(nameof(IsSystemMessage), new JSONBool(IsSystemMessage));
             obj.Add(nameof(IsActionMessage), new JSONBool(IsActionMessage));
@@ -54,7 +54,7 @@ namespace ChatCore.Models
             obj.Add(nameof(Message), new JSONString(Message));
             obj.Add(nameof(Sender), Sender.ToJson());
             obj.Add(nameof(Channel), Channel.ToJson());
-            JSONArray emotes = new JSONArray();
+            var emotes = new JSONArray();
             foreach (var emote in Emotes)
             {
                 emotes.Add(emote.ToJson());

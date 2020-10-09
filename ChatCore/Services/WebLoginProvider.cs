@@ -33,7 +33,7 @@ namespace ChatCore.Services
         {
             if (pageData == null)
             {
-                using (StreamReader reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ChatCore.Resources.Web.index.html")))
+                using (var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ChatCore.Resources.Web.index.html")))
                 {
                     pageData = reader.ReadToEnd();
                     //_logger.LogInformation($"PageData: {pageData}");
@@ -54,23 +54,23 @@ namespace ChatCore.Services
 
         private async void OnContext(IAsyncResult res)
         {
-            HttpListenerContext ctx = _listener.EndGetContext(res);
+            var ctx = _listener.EndGetContext(res);
             _listener.BeginGetContext(OnContext, null);
 
             await _requestLock.WaitAsync();
             try
             {
-                HttpListenerRequest req = ctx.Request;
-                HttpListenerResponse resp = ctx.Response;
+                var req = ctx.Request;
+                var resp = ctx.Response;
 
                 if (req.HttpMethod == "POST" && req.Url.AbsolutePath == "/submit")
                 {
                     using (var reader = new StreamReader(req.InputStream, req.ContentEncoding))
                     {
-                        string postStr = reader.ReadToEnd();
+                        var postStr = reader.ReadToEnd();
                         List<string> twitchChannels = new List<string>(), mixerChannels = new List<string>();
 
-                        Dictionary<string, string> postDict = new Dictionary<string, string>();
+                        var postDict = new Dictionary<string, string>();
                         foreach (var postData in postStr.Split('&'))
                         {
                             try
@@ -85,7 +85,7 @@ namespace ChatCore.Services
                                         _authManager.Credentials.Twitch_OAuthToken = twitchOauthToken.StartsWith("oauth:") ? twitchOauthToken : !string.IsNullOrEmpty(twitchOauthToken) ? $"oauth:{twitchOauthToken}" : "";
                                         break;
                                     case "twitch_channel":
-                                        string twitchChannel = split[1].ToLower();
+                                        var twitchChannel = split[1].ToLower();
                                         if (!string.IsNullOrWhiteSpace(twitchChannel) && !_authManager.Credentials.Twitch_Channels.Contains(twitchChannel))
                                         {
                                             _authManager.Credentials.Twitch_Channels.Add(twitchChannel);
@@ -94,7 +94,7 @@ namespace ChatCore.Services
                                         twitchChannels.Add(twitchChannel);
                                         break;
                                     case "mixer_channel":
-                                        string mixerChannel = split[1].ToLower();
+                                        var mixerChannel = split[1].ToLower();
                                         if (!string.IsNullOrWhiteSpace(mixerChannel) && !_authManager.Credentials.Mixer_Channels.Contains(mixerChannel))
                                         {
                                             _authManager.Credentials.Mixer_Channels.Add(mixerChannel);
@@ -133,20 +133,20 @@ namespace ChatCore.Services
                     resp.Close();
                     return;
                 }
-                StringBuilder pageBuilder = new StringBuilder(pageData);
-                StringBuilder twitchChannelHtmlString = new StringBuilder();
-                for (int i = 0; i < _authManager.Credentials.Twitch_Channels.Count; i++)
+                var pageBuilder = new StringBuilder(pageData);
+                var twitchChannelHtmlString = new StringBuilder();
+                for (var i = 0; i < _authManager.Credentials.Twitch_Channels.Count; i++)
                 {
                     var channel = _authManager.Credentials.Twitch_Channels[i];
                     twitchChannelHtmlString.Append($"<span id=\"twitch_channel_{i}\" class=\"chip \">{channel}<input type=\"text\" class=\"form-input\" name=\"twitch_channel\" style=\"display: none; \" value=\"{channel}\" /><button type=\"button\" onclick=\"removeTwitchChannel('twitch_channel_{i}')\" class=\"btn btn-clear\" aria-label=\"Close\" role=\"button\"></button></span>");
                 }
-                StringBuilder mixerChannelHtmlString = new StringBuilder();
-                for (int i = 0; i < _authManager.Credentials.Mixer_Channels.Count; i++)
+                var mixerChannelHtmlString = new StringBuilder();
+                for (var i = 0; i < _authManager.Credentials.Mixer_Channels.Count; i++)
                 {
                     var channel = _authManager.Credentials.Mixer_Channels[i];
                     mixerChannelHtmlString.Append($"<span id=\"mixer_channel_{i}\" class=\"chip \">{channel}<input type=\"text\" class=\"form-input\" name=\"mixer_channel\" style=\"display: none; \" value=\"{channel}\" /><button type=\"button\" onclick=\"removeMixerChannel('mixer_channel_{i}')\" class=\"btn btn-clear\" aria-label=\"Close\" role=\"button\"></button></span>");
                 }
-                StringBuilder mixerLinkHtmlString = new StringBuilder();
+                var mixerLinkHtmlString = new StringBuilder();
                 if(!string.IsNullOrEmpty(_authManager.Credentials.Mixer_RefreshToken))
                 {
                     mixerLinkHtmlString.Append("<button class=\"btn btn-error\" onclick=\"window.location.href='mixer'\" type=\"button\">Click to unlink your Mixer account</button></br></br>");
@@ -164,7 +164,7 @@ namespace ChatCore.Services
                 pageBuilder.Replace("{MixerSettingsHTML}", sectionHTML["Mixer"]);
                 pageBuilder.Replace("{MixerChannelHtml}", mixerChannelHtmlString.ToString());
                 pageBuilder.Replace("{MixerLinkHtml}", mixerLinkHtmlString.ToString());
-                byte[] data = Encoding.UTF8.GetBytes(pageBuilder.ToString());
+                var data = Encoding.UTF8.GetBytes(pageBuilder.ToString());
                 resp.ContentType = "text/html";
                 resp.ContentEncoding = Encoding.UTF8;
                 resp.ContentLength64 = data.LongLength;

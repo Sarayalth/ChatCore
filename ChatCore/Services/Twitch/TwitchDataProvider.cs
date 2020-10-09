@@ -65,13 +65,13 @@ namespace ChatCore.Services.Twitch
                 {
                     if (!_channelDataCached.Contains(channel.Id))
                     {
-                        string roomId = channel.AsTwitchChannel().Roomstate.RoomId;
+                        var roomId = channel.AsTwitchChannel().Roomstate.RoomId;
                         await _twitchBadgeProvider.TryRequestResources(roomId);
                         await _twitchCheermoteProvider.TryRequestResources(roomId);
                         await _bttvDataProvider.TryRequestResources(channel.Id);
                         await _ffzDataProvider.TryRequestResources(channel.Id);
 
-                        Dictionary<string, IChatResourceData> ret = new Dictionary<string, IChatResourceData>();
+                        var ret = new Dictionary<string, IChatResourceData>();
                         _twitchBadgeProvider.Resources.ToList().ForEach(x =>
                         {
                             var parts = x.Key.Split(new[] { '_' }, 2);
@@ -157,8 +157,8 @@ namespace ChatCore.Services.Twitch
             {
                 return false;
             }
-            int prefixLength = -1;
-            for (int i = word.Length - 1; i > 0; i--)
+            var prefixLength = -1;
+            for (var i = word.Length - 1; i > 0; i--)
             {
                 if (!char.IsDigit(word[i]))
                 {
@@ -170,7 +170,7 @@ namespace ChatCore.Services.Twitch
             {
                 return false;
             }
-            string prefix = word.Substring(0, prefixLength).ToLower();
+            var prefix = word.Substring(0, prefixLength).ToLower();
             if (!_twitchCheermoteProvider.TryGetResource(prefix, roomId, out data))
             {
                 return false;

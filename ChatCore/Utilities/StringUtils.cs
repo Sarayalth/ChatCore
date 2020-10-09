@@ -12,19 +12,19 @@ namespace ChatCore
 
         public static string Uncamelcase(this string str)
         {
-            StringBuilder sb = new StringBuilder();
-            int upperStreak = 0;
-            for (int i = 0; i < str.Length; i++)
+            var sb = new StringBuilder();
+            var upperStreak = 0;
+            for (var i = 0; i < str.Length; i++)
             {
 
                 if (i < str.Length - 2)
                 {
-                    bool isLower = char.IsLower(str[i]);
+                    var isLower = char.IsLower(str[i]);
                     if (!isLower)
                     {
                         upperStreak++;
                     }
-                    bool nextIsLower = char.IsLower(str[i + 1]);
+                    var nextIsLower = char.IsLower(str[i + 1]);
                     if (isLower && !nextIsLower)
                     {
                         sb.Append(str[i]);

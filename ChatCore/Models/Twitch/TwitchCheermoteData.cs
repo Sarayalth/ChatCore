@@ -20,7 +20,7 @@ namespace ChatCore.Models.Twitch
 
         public CheermoteTier GetTier(int numBits)
         {
-            for (int i = 1; i < Tiers.Count; i++)
+            for (var i = 1; i < Tiers.Count; i++)
             {
                 if (numBits < Tiers[i].MinBits)
                     return Tiers[i - 1];
