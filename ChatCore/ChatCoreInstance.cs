@@ -105,7 +105,7 @@ namespace ChatCore
             }
         }
 
-        private static void _webLoginProvider_OnLoginDataUpdated(Models.LoginCredentials obj)
+        private static void _webLoginProvider_OnLoginDataUpdated(LoginCredentials obj)
         {
             Console.WriteLine($"Twitch_OAuthToken: {obj.Twitch_OAuthToken}");
         }
