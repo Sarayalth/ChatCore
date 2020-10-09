@@ -4,6 +4,7 @@ using System;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using ChatCore.Utilities;
 using WebSocket4Net;
 
 namespace ChatCore.Services

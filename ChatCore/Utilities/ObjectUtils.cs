@@ -1,4 +1,4 @@
-﻿namespace ChatCore
+﻿namespace ChatCore.Utilities
 {
     public static class ObjectUtils
     {

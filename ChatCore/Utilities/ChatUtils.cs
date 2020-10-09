@@ -1,10 +1,10 @@
-﻿using ChatCore.Interfaces;
+﻿using System;
+using System.Collections.Concurrent;
+using ChatCore.Interfaces;
 using ChatCore.Models.Twitch;
 using ChatCore.Services.Twitch;
-using System;
-using System.Collections.Concurrent;
 
-namespace ChatCore
+namespace ChatCore.Utilities
 {
     public static class ChatUtils
     {

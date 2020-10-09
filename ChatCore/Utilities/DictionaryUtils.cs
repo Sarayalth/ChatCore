@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
-namespace ChatCore
+namespace ChatCore.Utilities
 {
 	public static class DictionaryUtils
 	{
