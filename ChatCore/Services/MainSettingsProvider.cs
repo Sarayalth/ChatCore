@@ -40,7 +40,7 @@ namespace ChatCore.Services
             _logger = logger;
             _pathProvider = pathProvider;
             _configSerializer = new ObjectSerializer();
-            string path = Path.Combine(_pathProvider.GetDataPath(), "settings.ini");
+            var path = Path.Combine(_pathProvider.GetDataPath(), "settings.ini");
             _configSerializer.Load(this, path);
             _configSerializer.Save(this, path);
         }

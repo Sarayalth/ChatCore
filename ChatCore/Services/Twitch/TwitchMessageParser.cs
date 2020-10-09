@@ -39,7 +39,7 @@ namespace ChatCore.Services.Twitch
         /// <returns>True if parsedMessages.Count > 0</returns>
         public bool ParseRawMessage(string rawMessage, ConcurrentDictionary<string, IChatChannel> channelInfo, IChatUser loggedInUser, out IChatMessage[] parsedMessages)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
 
             parsedMessages = null;
             var matches = _twitchMessageRegex.Matches(rawMessage);
@@ -50,7 +50,7 @@ namespace ChatCore.Services.Twitch
                 return false;
             }
 
-            List<IChatMessage> messages = new List<IChatMessage>();
+            var messages = new List<IChatMessage>();
             //_logger.LogInformation($"Parsing message {rawMessage}");
             foreach (Match match in matches)
             {
@@ -62,10 +62,10 @@ namespace ChatCore.Services.Twitch
 
                 //_logger.LogInformation($"Message: {match.Value}");
 
-                string messageType = match.Groups["MessageType"].Value;
-                string messageText = match.Groups["Message"].Success ? match.Groups["Message"].Value : "";
-                string messageChannelName = match.Groups["ChannelName"].Success ? match.Groups["ChannelName"].Value.Trim(new[] { '#' }) : "";
-                string messageRoomId = "";
+                var messageType = match.Groups["MessageType"].Value;
+                var messageText = match.Groups["Message"].Success ? match.Groups["Message"].Value : "";
+                var messageChannelName = match.Groups["ChannelName"].Success ? match.Groups["ChannelName"].Value.Trim(new[] { '#' }) : "";
+                var messageRoomId = "";
 
                 if (channelInfo.TryGetValue(messageChannelName, out var channel))
                 {
@@ -74,10 +74,10 @@ namespace ChatCore.Services.Twitch
 
                 try
                 {
-                    IChatBadge[] userBadges = new IChatBadge[0];
-                    List<IChatEmote> messageEmotes = new List<IChatEmote>();
+                    var userBadges = new IChatBadge[0];
+                    var messageEmotes = new List<IChatEmote>();
                     TwitchRoomstate messageRoomstate = null;
-                    HashSet<string> foundTwitchEmotes = new HashSet<string>();
+                    var foundTwitchEmotes = new HashSet<string>();
 
                     bool isActionMessage = false, isHighlighted = false;
                     if (messageText.StartsWith("\u0001ACTION"))
@@ -92,7 +92,7 @@ namespace ChatCore.Services.Twitch
                         return dict;
                     }));
 
-                    int messageBits = messageMeta.TryGetValue("bits", out var bitsString) && int.TryParse(bitsString, out var bitsInt) ? bitsInt : 0;
+                    var messageBits = messageMeta.TryGetValue("bits", out var bitsString) && int.TryParse(bitsString, out var bitsInt) ? bitsInt : 0;
 
                     if (messageMeta.TryGetValue("badges", out var badgeStr))
                     {
@@ -125,14 +125,14 @@ namespace ChatCore.Services.Twitch
                                     foreach (var instanceString in emoteParts[1].Split(','))
                                     {
                                         var instanceParts = instanceString.Split('-');
-                                        int startIndex = int.Parse(instanceParts[0]);
-                                        int endIndex = int.Parse(instanceParts[1]);
+                                        var startIndex = int.Parse(instanceParts[0]);
+                                        var endIndex = int.Parse(instanceParts[1]);
 
                                         if (startIndex >= messageText.Length)
                                         {
                                             _logger.LogWarning($"Start index is greater than message length! RawMessage: {match.Value}, InstanceString: {instanceString}, EmoteStr: {emoteStr}, StartIndex: {startIndex}, MessageLength: {messageText.Length}, IsActionMessage: {isActionMessage}");
                                         }
-                                        string emoteName = messageText.Substring(startIndex, endIndex - startIndex + 1);
+                                        var emoteName = messageText.Substring(startIndex, endIndex - startIndex + 1);
                                         foundTwitchEmotes.Add(emoteName);
                                         emoteList.Add(new TwitchEmote()
                                         {
@@ -151,16 +151,16 @@ namespace ChatCore.Services.Twitch
                             }
 
                             // Parse all the third party (BTTV, FFZ, etc) emotes
-                            StringBuilder currentWord = new StringBuilder();
-                            for (int i = 0; i <= messageText.Length; i++)
+                            var currentWord = new StringBuilder();
+                            for (var i = 0; i <= messageText.Length; i++)
                             {
                                 if (i == messageText.Length || char.IsWhiteSpace(messageText[i]))
                                 {
                                     if (currentWord.Length > 0)
                                     {
                                         var lastWord = currentWord.ToString();
-                                        int startIndex = i - lastWord.Length;
-                                        int endIndex = i - 1;
+                                        var startIndex = i - lastWord.Length;
+                                        var endIndex = i - 1;
 
                                         if (!foundTwitchEmotes.Contains(lastWord))
                                         {
@@ -243,8 +243,8 @@ namespace ChatCore.Services.Twitch
                         }
                     }
 
-                    string userName = match.Groups["HostName"].Success ? match.Groups["HostName"].Value.Split('!')[0] : "";
-                    string displayName = messageMeta.TryGetValue("display-name", out var name) ? name : userName;
+                    var userName = match.Groups["HostName"].Success ? match.Groups["HostName"].Value.Split('!')[0] : "";
+                    var displayName = messageMeta.TryGetValue("display-name", out var name) ? name : userName;
                     var newMessage = new TwitchMessage()
                     {
                         Id = messageMeta.TryGetValue("id", out var messageId) ? messageId : "", // TODO: default id of some sort?

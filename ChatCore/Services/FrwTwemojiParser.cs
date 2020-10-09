@@ -21,7 +21,7 @@ namespace ChatCore.Services
 
         public List<IChatEmote> FindEmojis(string str)
         {
-            List<IChatEmote> emojis = new List<IChatEmote>();
+            var emojis = new List<IChatEmote>();
             if (string.IsNullOrEmpty(str))
             {
                 return emojis;
@@ -33,7 +33,7 @@ namespace ChatCore.Services
             {
                 //_logger.LogInformation($"Match: {match.Value}, Bytes: {BitConverter.ToString(Encoding.UTF32.GetBytes(match.Value))}, Index: {match.Index}, Length: {match.Length}");
 
-                string unicodeStr = WebParseEmojiRegExMatchEvaluator(match);
+                var unicodeStr = WebParseEmojiRegExMatchEvaluator(match);
 
                 if (string.IsNullOrEmpty(unicodeStr))
                 {
@@ -66,7 +66,7 @@ namespace ChatCore.Services
 
         private static int ConvertUtf16ToCodePoint(string utf16)
         {
-            char[] s = utf16.ToCharArray();
+            var s = utf16.ToCharArray();
             int retval;
 
             if (s.GetUpperBound(0) == 0)
@@ -84,10 +84,10 @@ namespace ChatCore.Services
 
         private string WebParseEmojiRegExMatchEvaluator(Match match)
         {
-            string emoji = string.Empty;
-            char[] s = match.Value.ToCharArray();
-            int upperboundOfS = s.GetUpperBound(0);
-            int codepoint = 0;
+            var emoji = string.Empty;
+            var s = match.Value.ToCharArray();
+            var upperboundOfS = s.GetUpperBound(0);
+            var codepoint = 0;
             try
             {
                 if (upperboundOfS < 2)
@@ -104,7 +104,7 @@ namespace ChatCore.Services
                 }
                 else
                 {
-                    int i = 0;
+                    var i = 0;
                     while (i <= upperboundOfS)
                     {
                         if (emoji.Length > 0)
@@ -148,7 +148,7 @@ namespace ChatCore.Services
                                         // s[1]: 65039
                                         // s[2]: 8419
                                         codepoint = ConvertUtf16ToCodePoint(new string(new[] { s[i + 2] }));
-                                        int codepoint0 = ConvertUtf16ToCodePoint(new string(new[] { s[i] }));
+                                        var codepoint0 = ConvertUtf16ToCodePoint(new string(new[] { s[i] }));
                                         emoji += $"{codepoint0:x}-".ToUpperInvariant() + $"{codepoint:x}".ToUpperInvariant();
                                         i += 3;
                                     }

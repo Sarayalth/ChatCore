@@ -24,11 +24,11 @@ namespace ChatCore.Services.Twitch
 
         public async Task<bool> TryRequestResources(string category)
         {
-            bool isGlobal = string.IsNullOrEmpty(category);
+            var isGlobal = string.IsNullOrEmpty(category);
             try
             {
                 _logger.LogDebug($"Requesting Twitch {(isGlobal ? "global " : "")}cheermotes{(isGlobal ? "." : $" for channel {category}")}.");
-                using (HttpRequestMessage msg = new HttpRequestMessage(HttpMethod.Get, $"https://api.twitch.tv/v5/bits/actions?client_id={TwitchDataProvider.TWITCH_CLIENT_ID}&channel_id={category}&include_sponsored=1"))
+                using (var msg = new HttpRequestMessage(HttpMethod.Get, $"https://api.twitch.tv/v5/bits/actions?client_id={TwitchDataProvider.TWITCH_CLIENT_ID}&channel_id={category}&include_sponsored=1"))
                 {
                     var resp = await _httpClient.SendAsync(msg);
                     if (!resp.IsSuccessStatusCode)
@@ -36,21 +36,21 @@ namespace ChatCore.Services.Twitch
                         _logger.LogError($"Unsuccessful status code when requesting Twitch {(isGlobal ? "global " : "")}cheermotes{(isGlobal ? "." : " for channel " + category)}. {resp.ReasonPhrase}");
                         return false;
                     }
-                    JSONNode json = JSON.Parse(await resp.Content.ReadAsStringAsync());
+                    var json = JSON.Parse(await resp.Content.ReadAsStringAsync());
                     if (!json["actions"].IsArray)
                     {
                         _logger.LogError("badge_sets was not an object.");
                         return false;
                     }
-                    int count = 0;
-                    foreach (JSONNode node in json["actions"].AsArray.Values)
+                    var count = 0;
+                    foreach (var node in json["actions"].AsArray.Values)
                     {
                         //_logger.LogInformation($"Cheermote: {node.ToString()}");
-                        TwitchCheermoteData cheermote = new TwitchCheermoteData();
-                        string prefix = node["prefix"].Value.ToLower();
-                        foreach (JSONNode tier in node["tiers"].Values)
+                        var cheermote = new TwitchCheermoteData();
+                        var prefix = node["prefix"].Value.ToLower();
+                        foreach (var tier in node["tiers"].Values)
                         {
-                            CheermoteTier newTier = new CheermoteTier();
+                            var newTier = new CheermoteTier();
                             newTier.MinBits = tier["min_bits"].AsInt;
                             newTier.Color = tier["color"].Value;
                             newTier.CanCheer = tier["can_cheer"].AsBool;
@@ -61,7 +61,7 @@ namespace ChatCore.Services.Twitch
                         cheermote.Prefix = prefix;
                         cheermote.Tiers = cheermote.Tiers.OrderBy(t => t.MinBits).ToList();
 
-                        string identifier = isGlobal ? prefix : $"{category}_{prefix}";
+                        var identifier = isGlobal ? prefix : $"{category}_{prefix}";
                         Resources[identifier] = cheermote;
                         count++;
                     }

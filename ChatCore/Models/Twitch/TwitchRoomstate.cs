@@ -24,7 +24,7 @@ namespace ChatCore.Models.Twitch
         public TwitchRoomstate() { }
         public TwitchRoomstate(string json)
         {
-            JSONNode obj = JSON.Parse(json);
+            var obj = JSON.Parse(json);
             if (obj.TryGetKey(nameof(BroadcasterLang), out var broadcasterLang)) { BroadcasterLang = broadcasterLang.Value; }
             if (obj.TryGetKey(nameof(RoomId), out var roomId )) { RoomId = roomId.Value; }
             if (obj.TryGetKey(nameof(EmoteOnly), out var emoteOnly)) { EmoteOnly = emoteOnly.AsBool; }
@@ -36,7 +36,7 @@ namespace ChatCore.Models.Twitch
         }
         public JSONObject ToJson()
         {
-            JSONObject obj = new JSONObject();
+            var obj = new JSONObject();
             obj.Add(nameof(BroadcasterLang), new JSONString(BroadcasterLang));
             obj.Add(nameof(RoomId), new JSONString(RoomId));
             obj.Add(nameof(EmoteOnly), new JSONBool(EmoteOnly));

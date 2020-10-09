@@ -23,11 +23,11 @@ namespace ChatCore.Services.Twitch
 
         public async Task<bool> TryRequestResources(string category)
         {
-            bool isGlobal = string.IsNullOrEmpty(category);
+            var isGlobal = string.IsNullOrEmpty(category);
             try
             {
                 _logger.LogDebug($"Requesting BTTV {(isGlobal ? "global " : "")}emotes{(isGlobal ? "." : $" for channel {category}")}.");
-                using (HttpRequestMessage msg = new HttpRequestMessage(HttpMethod.Get, isGlobal ? "https://api.betterttv.net/2/emotes" : $"https://api.betterttv.net/2/channels/{category}"))
+                using (var msg = new HttpRequestMessage(HttpMethod.Get, isGlobal ? "https://api.betterttv.net/2/emotes" : $"https://api.betterttv.net/2/channels/{category}"))
                 {
                     var resp = await _httpClient.SendAsync(msg);
                     if (!resp.IsSuccessStatusCode)
@@ -36,18 +36,18 @@ namespace ChatCore.Services.Twitch
                         return false;
                     }
 
-                    JSONNode json = JSON.Parse(await resp.Content.ReadAsStringAsync());
+                    var json = JSON.Parse(await resp.Content.ReadAsStringAsync());
                     if (!json["emotes"].IsArray)
                     {
                         _logger.LogError("emotes was not an array.");
                         return false;
                     }
 
-                    int count = 0;
+                    var count = 0;
                     foreach (JSONObject o in json["emotes"].AsArray)
                     {
-                        string uri = $"https://cdn.betterttv.net/emote/{o["id"].Value}/3x";
-                        string identifier = isGlobal ? o["code"].Value : $"{category}_{o["code"].Value}";
+                        var uri = $"https://cdn.betterttv.net/emote/{o["id"].Value}/3x";
+                        var identifier = isGlobal ? o["code"].Value : $"{category}_{o["code"].Value}";
                         Resources.TryAdd(identifier, new ChatResourceData() { Uri = uri, IsAnimated = o["imageType"].Value == "gif", Type = isGlobal ? "BTTVGlobalEmote" : "BTTVChannelEmote" });
                         count++;
                     }
