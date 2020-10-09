@@ -64,7 +64,7 @@ namespace ChatCore.Services.Twitch
 
                 string messageType = match.Groups["MessageType"].Value;
                 string messageText = match.Groups["Message"].Success ? match.Groups["Message"].Value : "";
-                string messageChannelName = match.Groups["ChannelName"].Success ? match.Groups["ChannelName"].Value.Trim(new char[] { '#' }) : "";
+                string messageChannelName = match.Groups["ChannelName"].Success ? match.Groups["ChannelName"].Value.Trim(new[] { '#' }) : "";
                 string messageRoomId = "";
 
                 if (channelInfo.TryGetValue(messageChannelName, out var channel))
