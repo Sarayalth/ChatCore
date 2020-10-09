@@ -1,10 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using ChatCore.Interfaces;
 using ChatCore.Models;
-using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ChatCore.Services

@@ -1,8 +1,4 @@
-﻿using ChatCore.Models;
-using ChatCore.SimpleJSON;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ChatCore.SimpleJSON;
 
 namespace ChatCore.Interfaces
 {

@@ -1,11 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using ChatCore.Config;
 using ChatCore.Interfaces;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Numerics;
 
 namespace ChatCore.Services
 {

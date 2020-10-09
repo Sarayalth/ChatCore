@@ -1,9 +1,5 @@
-﻿using ChatCore.Models;
-using ChatCore.SimpleJSON;
-using System;
-using System.Collections.Generic;
+﻿using ChatCore.SimpleJSON;
 using System.Collections.ObjectModel;
-using System.Text;
 
 namespace ChatCore.Interfaces
 {
