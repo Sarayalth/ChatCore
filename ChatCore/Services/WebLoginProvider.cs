@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using ChatCore.Interfaces;
-using ChatCore.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;

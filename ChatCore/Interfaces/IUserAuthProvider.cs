@@ -1,9 +1,5 @@
 ﻿using ChatCore.Models;
-using ChatCore.Models.OAuth;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ChatCore.Interfaces
 {

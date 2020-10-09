@@ -1,7 +1,4 @@
 ﻿using ChatCore.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ChatCore.Models
 {

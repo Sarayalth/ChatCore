@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using ChatCore.Interfaces;
-using ChatCore.Models;
 using ChatCore.Models.Twitch;
 using System;
 using System.Collections.Concurrent;

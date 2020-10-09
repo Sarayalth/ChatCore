@@ -1,13 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using ChatCore.Interfaces;
 using ChatCore.Models.Twitch;
-using ChatCore.SimpleJSON;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using ChatCore.Models;
 using System.Threading;
