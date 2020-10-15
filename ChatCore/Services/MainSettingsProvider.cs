@@ -9,7 +9,7 @@ namespace ChatCore.Services
     public class MainSettingsProvider
     {
         [ConfigSection("WebApp")]
-        [HTMLIgnore]
+        [HtmlIgnore]
         [ConfigMeta(Comment = "Set to true to disable the webapp entirely.")]
         public bool DisableWebApp = false;
         [ConfigMeta(Comment = "Whether or not to launch the webapp in your default browser when ChatCore is started.")]
@@ -31,10 +31,6 @@ namespace ChatCore.Services
         [ConfigMeta(Comment = "When enabled, Twitch cheermotes will be parsed.")]
         public bool ParseCheermotes = true;
 
-        [ConfigSection("Mixer")]
-        [ConfigMeta(Comment = "When enabled, Mixer emotes will be parsed.")]
-        public bool ParseMixerEmotes = true;
-
         public MainSettingsProvider(ILogger<MainSettingsProvider> logger, IPathProvider pathProvider)
         {
             _logger = logger;
@@ -54,9 +50,9 @@ namespace ChatCore.Services
             _configSerializer.Save(this, Path.Combine(_pathProvider.GetDataPath(), "settings.ini"));
         }
 
-        public Dictionary<string, string> GetSettingsAsHTML()
+        public Dictionary<string, string> GetSettingsAsHtml()
         {
-            return _configSerializer.GetSettingsAsHTML(this);
+            return _configSerializer.GetSettingsAsHtml(this);
         }
 
         public void SetFromDictionary(Dictionary<string, string> postData)
