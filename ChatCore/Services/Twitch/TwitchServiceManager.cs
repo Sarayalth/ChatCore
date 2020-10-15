@@ -8,20 +8,20 @@ namespace ChatCore.Services.Twitch
 {
     public class TwitchServiceManager : IChatServiceManager, IDisposable
     {
-        public bool IsRunning { get; private set; } = false;
-        public HashSet<Assembly> RegisteredAssemblies => new HashSet<Assembly>();
-        private object _lock = new object();
+	    private readonly ILogger _logger;
+	    private readonly TwitchService _twitchService;
+	    private readonly object _lock = new object();
 
-        public TwitchServiceManager(ILogger<TwitchServiceManager> logger, TwitchService twitchService)
+	    public bool IsRunning { get; private set; }
+	    public HashSet<Assembly> RegisteredAssemblies => new HashSet<Assembly>();
+
+	    public TwitchServiceManager(ILogger<TwitchServiceManager> logger, TwitchService twitchService)
         {
             _logger = logger;
             _twitchService = twitchService;
         }
 
-        private ILogger _logger;
-        private TwitchService _twitchService;
-
-        public void Start(Assembly assembly)
+	    public void Start(Assembly assembly)
         {
             lock (_lock)
             {
@@ -30,8 +30,10 @@ namespace ChatCore.Services.Twitch
                 {
                     return;
                 }
+
                 _twitchService.Start();
                 IsRunning = true;
+
                 _logger.LogInformation("Started");
             }
         }
@@ -44,6 +46,7 @@ namespace ChatCore.Services.Twitch
                 {
                     return;
                 }
+
                 if (assembly != null)
                 {
                     RegisteredAssemblies.Remove(assembly);
@@ -52,8 +55,10 @@ namespace ChatCore.Services.Twitch
                         return;
                     }
                 }
+
                 _twitchService.Stop();
                 IsRunning = false;
+
                 _logger.LogInformation("Stopped");
             }
         }
@@ -62,14 +67,16 @@ namespace ChatCore.Services.Twitch
         {
             if(IsRunning)
             {
-                Stop(null);
+                Stop(null!);
             }
+
             _logger.LogInformation("Disposed");
         }
 
         public IChatService GetService()
         {
-            return _twitchService;
+	        // ReSharper disable once InconsistentlySynchronizedField
+	        return _twitchService;
         }
     }
 }

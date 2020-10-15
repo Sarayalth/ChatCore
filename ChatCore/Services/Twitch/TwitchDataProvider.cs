@@ -7,189 +7,211 @@ using System.Linq;
 using System.Threading.Tasks;
 using ChatCore.Models;
 using System.Threading;
-using ChatCore.Utilities;
 
 namespace ChatCore.Services.Twitch
 {
-    public class TwitchDataProvider
-    {
-        internal const string TWITCH_CLIENT_ID = "jg6ij5z8mf8jr8si22i5uq8tobnmde";
+	public class TwitchDataProvider
+	{
+		internal const string TWITCH_CLIENT_ID = "jg6ij5z8mf8jr8si22i5uq8tobnmde";
 
-        public TwitchDataProvider(ILogger<TwitchDataProvider> logger, TwitchBadgeProvider twitchBadgeProvider, TwitchCheermoteProvider twitchCheermoteProvider, BTTVDataProvider bttvDataProvider, FFZDataProvider ffzDataProvider)
-        {
-            _logger = logger;
-            _twitchBadgeProvider = twitchBadgeProvider;
-            _twitchCheermoteProvider = twitchCheermoteProvider;
-            _bttvDataProvider = bttvDataProvider;
-            _ffzDataProvider = ffzDataProvider;
-        }
+		private readonly ILogger _logger;
+		private readonly TwitchBadgeProvider _twitchBadgeProvider;
+		private readonly TwitchCheermoteProvider _twitchCheermoteProvider;
+		private readonly BTTVDataProvider _bttvDataProvider;
+		private readonly FFZDataProvider _ffzDataProvider;
 
-        private ILogger _logger;
-        private TwitchBadgeProvider _twitchBadgeProvider;
-        private TwitchCheermoteProvider _twitchCheermoteProvider;
-        private BTTVDataProvider _bttvDataProvider;
-        private FFZDataProvider _ffzDataProvider;
+		private readonly HashSet<string> _channelDataCached = new HashSet<string>();
+		private readonly SemaphoreSlim _globalLock;
+		private readonly SemaphoreSlim _channelLock;
 
-        private HashSet<string> _channelDataCached = new HashSet<string>();
-        private SemaphoreSlim _globalLock = new SemaphoreSlim(1,1), _channelLock = new SemaphoreSlim(1,1);
+		public TwitchDataProvider(ILogger<TwitchDataProvider> logger, TwitchBadgeProvider twitchBadgeProvider, TwitchCheermoteProvider twitchCheermoteProvider, BTTVDataProvider bttvDataProvider,
+			FFZDataProvider ffzDataProvider)
+		{
+			_logger = logger;
+			_twitchBadgeProvider = twitchBadgeProvider;
+			_twitchCheermoteProvider = twitchCheermoteProvider;
+			_bttvDataProvider = bttvDataProvider;
+			_ffzDataProvider = ffzDataProvider;
 
-        public void TryRequestGlobalResources()
-        {
-            Task.Run(async () =>
-            {
-                await _globalLock.WaitAsync();
-                try
-                {
-                    await _twitchBadgeProvider.TryRequestResources(null);
-                    await _bttvDataProvider.TryRequestResources(null);
-                    await _ffzDataProvider.TryRequestResources(null);
-                    //_logger.LogInformation("Finished caching global emotes/badges.");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"An exception occurred while trying to request global Twitch resources.");
-                }
-                finally
-                {
-                    _globalLock.Release();
-                }
-            });
-        }
+			_globalLock = new SemaphoreSlim(1, 1);
+			_channelLock = new SemaphoreSlim(1, 1);
+		}
 
-
-        public void TryRequestChannelResources(IChatChannel channel, Action<Dictionary<string, IChatResourceData>> OnChannelResourceDataCached)
-        {
-            Task.Run(async () =>
-            {
-                await _channelLock.WaitAsync();
-                try
-                {
-                    if (!_channelDataCached.Contains(channel.Id))
-                    {
-                        var roomId = channel.AsTwitchChannel().Roomstate.RoomId;
-                        await _twitchBadgeProvider.TryRequestResources(roomId);
-                        await _twitchCheermoteProvider.TryRequestResources(roomId);
-                        await _bttvDataProvider.TryRequestResources(channel.Id);
-                        await _ffzDataProvider.TryRequestResources(channel.Id);
-
-                        var ret = new Dictionary<string, IChatResourceData>();
-                        _twitchBadgeProvider.Resources.ToList().ForEach(x =>
-                        {
-                            var parts = x.Key.Split(new[] { '_' }, 2);
-                            ret[$"{x.Value.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}"] = x.Value;
-                        });
-                        _twitchCheermoteProvider.Resources.ToList().ForEach(x =>
-                        {
-                            var parts = x.Key.Split(new[] { '_' }, 2);
-                            foreach (var tier in x.Value.Tiers)
-                            {
-                                ret[$"{tier.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}{tier.MinBits}"] = tier;
-                            }
-                        });
-                        _bttvDataProvider.Resources.ToList().ForEach(x =>
-                        {
-                            var parts = x.Key.Split(new[] { '_' }, 2);
-                            ret[$"{x.Value.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}"] = x.Value;
-                        });
-                        _ffzDataProvider.Resources.ToList().ForEach(x =>
-                        {
-                            var parts = x.Key.Split(new[] { '_' }, 2);
-                            ret[$"{x.Value.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}"] = x.Value;
-                        });
-                        OnChannelResourceDataCached?.Invoke(ret);
-                        _channelDataCached.Add(channel.Id);
-                        //_logger.LogInformation($"Finished caching emotes for channel {channel.Id}.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"An exception occurred while trying to request Twitch channel resources for {channel.Id}.");
-                }
-                finally
-                {
-                    _channelLock.Release();
-                }
-            });
-        }
-
-        public async void TryReleaseChannelResources(IChatChannel channel)
-        {
-            await _channelLock.WaitAsync();
-            try
-            {
-                // TODO: readd a way to actually clear channel resources
-                _logger.LogInformation($"Releasing resources for channel {channel.Id}");
-                _channelDataCached.Remove(channel.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"An exception occurred while trying to release Twitch channel resources for {channel.Id}.");
-            }
-            finally
-            {
-                _channelLock.Release();
-            }
-        }
+		public void TryRequestGlobalResources()
+		{
+			Task.Run(async () =>
+			{
+				await _globalLock.WaitAsync();
+				try
+				{
+					await _twitchBadgeProvider.TryRequestResources(null!);
+					await _bttvDataProvider.TryRequestResources(null!);
+					await _ffzDataProvider.TryRequestResources(null!);
+					//_logger.LogInformation("Finished caching global emotes/badges.");
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, $"An exception occurred while trying to request global Twitch resources.");
+				}
+				finally
+				{
+					_globalLock.Release();
+				}
+			});
+		}
 
 
-        internal bool TryGetThirdPartyEmote(string word, string channel, out ChatResourceData data)
-        {
-            if (_bttvDataProvider.TryGetResource(word, channel, out data))
-            {
-                return true;
-            }
-            else if (_ffzDataProvider.TryGetResource(word, channel, out data))
-            {
-                return true;
-            }
-            data = null;
-            return false;
-        }
+		public void TryRequestChannelResources(TwitchChannel channel, Action<Dictionary<string, IChatResourceData>> channelResourceDataCached)
+		{
+			Task.Run(async () =>
+			{
+				await _channelLock.WaitAsync();
+				try
+				{
+					if (!_channelDataCached.Contains(channel.Id))
+					{
+						var roomId = channel.Roomstate.RoomId;
+						await _twitchBadgeProvider.TryRequestResources(roomId);
+						await _twitchCheermoteProvider.TryRequestResources(roomId);
+						await _bttvDataProvider.TryRequestResources(channel.Id);
+						await _ffzDataProvider.TryRequestResources(channel.Id);
 
-        internal bool TryGetCheermote(string word, string roomId, out TwitchCheermoteData data, out int numBits)
-        {
-            numBits = 0;
-            data = null;
-            if (string.IsNullOrEmpty(roomId))
-            {
-                return false;
-            }
-            if (!char.IsLetter(word[0]) || !char.IsDigit(word[word.Length - 1]))
-            {
-                return false;
-            }
-            var prefixLength = -1;
-            for (var i = word.Length - 1; i > 0; i--)
-            {
-                if (!char.IsDigit(word[i]))
-                {
-                    prefixLength = i + 1;
-                    break;
-                }
-            }
-            if (prefixLength == -1)
-            {
-                return false;
-            }
-            var prefix = word.Substring(0, prefixLength).ToLower();
-            if (!_twitchCheermoteProvider.TryGetResource(prefix, roomId, out data))
-            {
-                return false;
-            }
-            if (int.TryParse(word.Substring(prefixLength), out numBits)) {
-                return true;
-            }
-            return false;
-        }
+						var ret = new Dictionary<string, IChatResourceData>();
+						_twitchBadgeProvider.Resources.ToList().ForEach(x =>
+						{
+							var parts = x.Key.Split(new[]
+							{
+								'_'
+							}, 2);
+							ret[$"{x.Value.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}"] = x.Value;
+						});
 
-        internal bool TryGetBadgeInfo(string badgeId, string roomid, out ChatResourceData badge)
-        {
-            if(_twitchBadgeProvider.TryGetResource(badgeId, roomid, out badge))
-            {
-                return true;
-            }
-            badge = null;
-            return false;
-        }
-    }
+						_twitchCheermoteProvider.Resources.ToList().ForEach(x =>
+						{
+							var parts = x.Key.Split(new[]
+							{
+								'_'
+							}, 2);
+							foreach (var tier in x.Value.Tiers)
+							{
+								ret[$"{tier.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}{tier.MinBits}"] = tier;
+							}
+						});
+
+						_bttvDataProvider.Resources.ToList().ForEach(x =>
+						{
+							var parts = x.Key.Split(new[]
+							{
+								'_'
+							}, 2);
+							ret[$"{x.Value.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}"] = x.Value;
+						});
+
+						_ffzDataProvider.Resources.ToList().ForEach(x =>
+						{
+							var parts = x.Key.Split(new[]
+							{
+								'_'
+							}, 2);
+							ret[$"{x.Value.Type}_{(parts.Length > 1 ? parts[1] : parts[0])}"] = x.Value;
+						});
+
+						channelResourceDataCached?.Invoke(ret);
+						_channelDataCached.Add(channel.Id);
+						//_logger.LogInformation($"Finished caching emotes for channel {channel.Id}.");
+					}
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, $"An exception occurred while trying to request Twitch channel resources for {channel.Id}.");
+				}
+				finally
+				{
+					_channelLock.Release();
+				}
+			});
+		}
+
+		public async void TryReleaseChannelResources(IChatChannel channel)
+		{
+			await _channelLock.WaitAsync();
+			try
+			{
+				// TODO: readd a way to actually clear channel resources
+				_logger.LogInformation($"Releasing resources for channel {channel.Id}");
+				_channelDataCached.Remove(channel.Id);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, $"An exception occurred while trying to release Twitch channel resources for {channel.Id}.");
+			}
+			finally
+			{
+				_channelLock.Release();
+			}
+		}
+
+
+		internal bool TryGetThirdPartyEmote(string word, string channel, out ChatResourceData data)
+		{
+			if (_bttvDataProvider.TryGetResource(word, channel, out data))
+			{
+				return true;
+			}
+
+			if (_ffzDataProvider.TryGetResource(word, channel, out data))
+			{
+				return true;
+			}
+
+			data = null!;
+			return false;
+		}
+
+		internal bool TryGetCheermote(string word, string roomId, out TwitchCheermoteData data, out int numBits)
+		{
+			numBits = 0;
+			data = null!;
+			if (string.IsNullOrEmpty(roomId))
+			{
+				return false;
+			}
+
+			if (!char.IsLetter(word[0]) || !char.IsDigit(word[word.Length - 1]))
+			{
+				return false;
+			}
+
+			var prefixLength = -1;
+			for (var i = word.Length - 1; i > 0; i--)
+			{
+				if (char.IsDigit(word[i]))
+				{
+					continue;
+				}
+
+				prefixLength = i + 1;
+				break;
+			}
+
+			if (prefixLength == -1)
+			{
+				return false;
+			}
+
+			var prefix = word.Substring(0, prefixLength).ToLower();
+			return _twitchCheermoteProvider.TryGetResource(prefix, roomId, out data) && int.TryParse(word.Substring(prefixLength), out numBits);
+		}
+
+		internal bool TryGetBadgeInfo(string badgeId, string roomid, out ChatResourceData badge)
+		{
+			if (_twitchBadgeProvider.TryGetResource(badgeId, roomid, out badge))
+			{
+				return true;
+			}
+
+			badge = null!;
+			return false;
+		}
+	}
 }
