@@ -3,27 +3,29 @@ using System.Collections.Concurrent;
 
 namespace ChatCore.Logging
 {
-    internal class CustomSinkProvider : ILoggerProvider
-    {
-        private ChatCoreInstance _sc;
-        public CustomSinkProvider(ChatCoreInstance sc)
-        {
-            _sc = sc;
-        }
+	internal class CustomSinkProvider : ILoggerProvider
+	{
+		private readonly ChatCoreInstance _chatCoreInstance;
+		private readonly ConcurrentDictionary<string, CustomLoggerSink> _loggers = new ConcurrentDictionary<string, CustomLoggerSink>();
 
-        internal void OnLogReceived(CustomLogLevel level, string categoryName, string message)
-        {
-            _sc.OnLogReceivedInternal(level, categoryName, message);
-        }
+		public CustomSinkProvider(ChatCoreInstance chatCoreInstance)
+		{
+			_chatCoreInstance = chatCoreInstance;
+		}
 
-        private readonly ConcurrentDictionary<string, CustomLoggerSink> _loggers = new ConcurrentDictionary<string, CustomLoggerSink>();
-        public ILogger CreateLogger(string categoryName)
-        {
-            return _loggers.GetOrAdd(categoryName, name => new CustomLoggerSink(this, categoryName));
-        }
-        public void Dispose()
-        {
-            _loggers.Clear();
-        }
-    }
+		internal void OnLogReceived(CustomLogLevel level, string categoryName, string message)
+		{
+			_chatCoreInstance.OnLogReceivedInternal(level, categoryName, message);
+		}
+
+		public ILogger CreateLogger(string categoryName)
+		{
+			return _loggers.GetOrAdd(categoryName, _ => new CustomLoggerSink(this, categoryName));
+		}
+
+		public void Dispose()
+		{
+			_loggers.Clear();
+		}
+	}
 }
