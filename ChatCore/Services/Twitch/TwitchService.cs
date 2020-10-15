@@ -15,27 +15,54 @@ namespace ChatCore.Services.Twitch
 {
     public class TwitchService : ChatServiceBase, IChatService
     {
-        private ConcurrentDictionary<string, IChatChannel> _channels = new ConcurrentDictionary<string, IChatChannel>();
-        public ReadOnlyDictionary<string, IChatChannel> Channels;
-        public TwitchUser LoggedInUser { get; internal set; } = null;
+	    private readonly ConcurrentDictionary<Assembly, Action<IChatService, string>> _rawMessageReceivedCallbacks;
+	    private readonly ConcurrentDictionary<string, IChatChannel> _channels;
+
+	    private readonly ILogger _logger;
+	    private readonly TwitchMessageParser _messageParser;
+	    private readonly TwitchDataProvider _dataProvider;
+	    private readonly IWebSocketService _websocketService;
+	    private readonly IUserAuthProvider _authManager;
+
+	    private readonly object _messageReceivedLock;
+	    private readonly object _initLock;
+
+	    private readonly string _anonUsername;
+	    private string? _loggedInUsername;
+	    private bool _isStarted;
+
+	    private int _currentMessageCount;
+	    private DateTime _lastResetTime = DateTime.UtcNow;
+	    private readonly ConcurrentQueue<KeyValuePair<Assembly, string>> _textMessageQueue = new ConcurrentQueue<KeyValuePair<Assembly, string>>();
+
+	    private string UserName => string.IsNullOrEmpty(_authManager.Credentials.Twitch_OAuthToken) ? _anonUsername : "@";
+	    private string OAuthToken => string.IsNullOrEmpty(_authManager.Credentials.Twitch_OAuthToken) ? string.Empty : _authManager.Credentials.Twitch_OAuthToken;
+
+	    public ReadOnlyDictionary<string, IChatChannel> Channels { get; }
+        public TwitchUser? LoggedInUser { get; internal set; }
 
         public string DisplayName { get; } = "Twitch";
 
-        protected ConcurrentDictionary<Assembly, Action<IChatService, string>> _onRawMessageReceivedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, string>>();
         public event Action<IChatService, string> OnRawMessageReceived
         {
-            add => _onRawMessageReceivedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
-            remove => _onRawMessageReceivedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
+            add => _rawMessageReceivedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
+            remove => _rawMessageReceivedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
 
         public TwitchService(ILogger<TwitchService> logger, TwitchMessageParser messageParser, TwitchDataProvider twitchDataProvider, IWebSocketService websocketService, IUserAuthProvider authManager, Random rand)
         {
-            _logger = logger;
+	        _logger = logger;
             _messageParser = messageParser;
             _dataProvider = twitchDataProvider;
             _websocketService = websocketService;
             _authManager = authManager;
-            _rand = rand;
+
+            _rawMessageReceivedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, string>>();
+            _channels = new ConcurrentDictionary<string, IChatChannel>();
+            _messageReceivedLock = new object();
+            _initLock = new object();
+
+            _anonUsername = $"justinfan{rand.Next(10000, 1000000)}".ToLower();
 
             Channels = new ReadOnlyDictionary<string, IChatChannel>(_channels);
 
@@ -53,20 +80,6 @@ namespace ChatCore.Services.Twitch
                 Start(true);
             }
         }
-
-        private ILogger _logger;
-        private TwitchMessageParser _messageParser;
-        private TwitchDataProvider _dataProvider;
-        private IWebSocketService _websocketService;
-        private IUserAuthProvider _authManager;
-        private Random _rand;
-        private bool _isStarted = false;
-        private string _anonUsername;
-        private object _messageReceivedLock = new object(), _initLock = new object();
-        private string _loggedInUsername;
-
-        private string _userName { get => string.IsNullOrEmpty(_authManager.Credentials.Twitch_OAuthToken) ? _anonUsername : "@"; }
-        private string _oAuthToken { get => string.IsNullOrEmpty(_authManager.Credentials.Twitch_OAuthToken) ? "" : _authManager.Credentials.Twitch_OAuthToken; }
 
         internal void Start(bool forceReconnect = false)
         {
@@ -89,14 +102,18 @@ namespace ChatCore.Services.Twitch
         {
             lock (_initLock)
             {
-                if (_isStarted)
-                {
-                    _isStarted = false;
-                    _channels.Clear();
-                    LoggedInUser = null;
-                    _loggedInUsername = null;
-                    _websocketService.Disconnect();
-                }
+	            if (!_isStarted)
+	            {
+		            return;
+	            }
+
+	            _isStarted = false;
+	            _channels.Clear();
+
+	            LoggedInUser = null!;
+	            _loggedInUsername = null!;
+
+	            _websocketService.Disconnect();
             }
         }
 
@@ -105,20 +122,23 @@ namespace ChatCore.Services.Twitch
             lock (_messageReceivedLock)
             {
                 //_logger.LogInformation("RawMessage: " + rawMessage);
-                _onRawMessageReceivedCallbacks?.InvokeAll(assembly, this, rawMessage);
+                _rawMessageReceivedCallbacks?.InvokeAll(assembly, this, rawMessage);
                 if (_messageParser.ParseRawMessage(rawMessage, _channels, LoggedInUser, out var parsedMessages))
                 {
-                    foreach (TwitchMessage twitchMessage in parsedMessages)
+                    foreach (var chatMessage in parsedMessages)
                     {
-                        if(assembly != null)
+	                    var twitchMessage = (TwitchMessage)chatMessage;
+	                    if(assembly != null)
                         {
                             twitchMessage.Sender = LoggedInUser;
                         }
+
                         var twitchChannel = (twitchMessage.Channel as TwitchChannel);
-                        if (twitchChannel.Roomstate == null)
+                        if (twitchChannel!.Roomstate == null)
                         {
-                            twitchChannel.Roomstate = _channels.TryGetValue(twitchMessage.Channel.Id, out var channel) ? (channel as TwitchChannel).Roomstate : new TwitchRoomstate();
+                            twitchChannel.Roomstate = _channels.TryGetValue(twitchMessage.Channel.Id, out var channel) ? (channel as TwitchChannel)?.Roomstate : new TwitchRoomstate();
                         }
+
                         switch (twitchMessage.Type)
                         {
                             case "PING":
@@ -155,7 +175,7 @@ namespace ChatCore.Services.Twitch
                                 {
                                     if (!_channels.ContainsKey(twitchMessage.Channel.Id))
                                     {
-                                        _channels[twitchMessage.Channel.Id] = twitchMessage.Channel.AsTwitchChannel();
+                                        _channels[twitchMessage.Channel.Id] = twitchMessage.Channel.AsTwitchChannel()!;
                                         _logger.LogInformation($"Added channel {twitchMessage.Channel.Id} to the channel list.");
                                         JoinRoomCallbacks?.InvokeAll(assembly!, this, twitchMessage.Channel, _logger);
                                     }
@@ -175,7 +195,7 @@ namespace ChatCore.Services.Twitch
                                 continue;
                             case "ROOMSTATE":
                                 _channels[twitchMessage.Channel.Id] = twitchMessage.Channel;
-                                _dataProvider.TryRequestChannelResources(twitchMessage.Channel, (resources) =>
+                                _dataProvider.TryRequestChannelResources(twitchMessage.Channel.AsTwitchChannel()!, resources =>
                                 {
                                     ChannelResourceDataCached?.InvokeAll(assembly!, this, twitchMessage.Channel, resources);
                                 });
@@ -183,7 +203,7 @@ namespace ChatCore.Services.Twitch
                                 continue;
                             case "USERSTATE":
                             case "GLOBALUSERSTATE":
-                                LoggedInUser = twitchMessage.Sender.AsTwitchUser();
+                                LoggedInUser = twitchMessage.Sender!.AsTwitchUser()!;
                                 if(string.IsNullOrEmpty(LoggedInUser.DisplayName))
                                 {
                                     LoggedInUser.DisplayName = _loggedInUsername;
@@ -225,18 +245,17 @@ namespace ChatCore.Services.Twitch
         {
             _logger.LogInformation("Twitch connection opened");
             _websocketService.SendMessage("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership");
-            _anonUsername = $"justinfan{_rand.Next(10000, 1000000)}".ToLower();
             TryLogin();
         }
 
         private void TryLogin()
         {
             _logger.LogInformation("Trying to login!");
-            if (!string.IsNullOrEmpty(_oAuthToken))
+            if (!string.IsNullOrEmpty(OAuthToken))
             {
-                _websocketService.SendMessage($"PASS {_oAuthToken}");
+                _websocketService.SendMessage($"PASS {OAuthToken}");
             }
-            _websocketService.SendMessage($"NICK {_userName}");
+            _websocketService.SendMessage($"NICK {UserName}");
         }
 
         private void SendRawMessage(Assembly assembly, string rawMessage, bool forwardToSharedClients = false)
@@ -254,10 +273,6 @@ namespace ChatCore.Services.Twitch
                 _logger.LogWarning("WebSocket service is not connected!");
             }
         }
-
-        private int _currentMessageCount = 0;
-        private DateTime _lastResetTime = DateTime.UtcNow;
-        private ConcurrentQueue<KeyValuePair<Assembly, string>> _textMessageQueue = new ConcurrentQueue<KeyValuePair<Assembly, string>>();
 
         private async Task ProcessQueuedMessages()
         {
