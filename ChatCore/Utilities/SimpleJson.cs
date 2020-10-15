@@ -216,13 +216,13 @@ namespace ChatCore.Utilities
 
 		public virtual bool Inline { get => false; set { } }
 
-		public virtual void Add(string aKey, JSONNode aItem)
+		public virtual void Add(string? aKey, JSONNode? aItem)
 		{
 		}
 
-		public virtual void Add(JSONNode aItem)
+		public virtual void Add(JSONNode? anItem)
 		{
-			Add(string.Empty, aItem);
+			Add(string.Empty, anItem);
 		}
 
 		public virtual JSONNode? Remove(string aKey)
@@ -812,7 +812,7 @@ namespace ChatCore.Utilities
 
 		public override int Count => _mList.Count;
 
-		public override void Add(string aKey, JSONNode aItem)
+		public override void Add(string? aKey, JSONNode? aItem)
 		{
 			if (aItem == null)
 			{
@@ -1324,8 +1324,7 @@ namespace ChatCore.Utilities
 			get => _mData.ToString();
 			set
 			{
-				bool v;
-				if (bool.TryParse(value, out v))
+				if (bool.TryParse(value, out var v))
 				{
 					_mData = v;
 				}
@@ -1478,12 +1477,12 @@ namespace ChatCore.Utilities
 			set => Set(new JSONObject()).Add(aKey, value);
 		}
 
-		public override void Add(JSONNode aItem)
+		public override void Add(JSONNode? anItem)
 		{
-			Set(new JSONArray()).Add(aItem);
+			Set(new JSONArray()).Add(anItem);
 		}
 
-		public override void Add(string aKey, JSONNode aItem)
+		public override void Add(string? aKey, JSONNode? aItem)
 		{
 			Set(new JSONObject()).Add(aKey, aItem);
 		}
