@@ -29,7 +29,7 @@ namespace ChatCore.Services
                 {
                     continue;
                 }
-                var emoji = new Emoji()
+                var emoji = new Emoji
                 {
                     Id = $"Emoji_{unicodeStr}",
                     Name = match.Value,

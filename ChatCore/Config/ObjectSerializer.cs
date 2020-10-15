@@ -249,7 +249,7 @@ namespace ChatCore.Config
                 File.Move(path, backupPath);
             }
 
-            string lastConfigSection = null!;
+            string? lastConfigSection = null;
             var serializedClass = new List<string>();
 
             if (obj.GetType().GetCustomAttribute(typeof(ConfigHeader)) is ConfigHeader configHeader)
@@ -284,7 +284,7 @@ namespace ChatCore.Config
                     lastConfigSection = configSection.Name;
                 }
 
-                var configMeta = (ConfigMeta)fieldInfo.GetCustomAttribute(typeof(ConfigMeta));
+                var configMeta = (ConfigMeta?)fieldInfo.GetCustomAttribute(typeof(ConfigMeta));
                 var valueStr = "";
                 try
                 {

@@ -22,7 +22,7 @@ namespace ChatCore.Models.Twitch
         {
             var obj = new JSONObject();
             obj.Add(nameof(Id), new JSONString(Id));
-            obj.Add(nameof(Roomstate), Roomstate.ToJson());
+            obj.Add(nameof(Roomstate), Roomstate!.ToJson());
             return obj;
         }
     }
