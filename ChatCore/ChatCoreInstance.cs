@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using ChatCore.Exceptions;
 using ChatCore.Interfaces;
-using ChatCore.Models;
 using ChatCore.Services;
 using ChatCore.Services.Twitch;
 using System;
@@ -16,93 +15,96 @@ namespace ChatCore
 {
     public class ChatCoreInstance
     {
-        private static object _createLock = new object();
-        internal static ChatCoreInstance _instance = null;
-        internal static ServiceProvider _serviceProvider;
+        private static readonly object CreateLock = new object();
 
-        public event Action<CustomLogLevel, string, string> OnLogReceived;
+        private readonly object _runLock = new object();
+
+        private static ChatCoreInstance? _instance;
+        private static ServiceProvider? _serviceProvider;
+
+        private ChatCoreInstance() { }
+
+        public event Action<CustomLogLevel, string, string>? OnLogReceived;
+
+
         internal void OnLogReceivedInternal(CustomLogLevel level, string category, string message)
         {
             OnLogReceived?.Invoke(level, category, message);
         }
 
-        ChatCoreInstance() { }
-
         public static ChatCoreInstance Create()
         {
-            lock (_createLock)
+            lock (CreateLock)
             {
-                if (_instance is null)
-                {
-                    _instance = new ChatCoreInstance();
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection
-                        .AddLogging(builder =>
-                        {
-#if DEBUG
-                            builder.AddConsole();
-#endif
-                            builder.AddProvider(new CustomSinkProvider(_instance));
-                        })
-                        .AddSingleton<Random>()
-                        .AddSingleton<HttpClient>()
-                        .AddSingleton<ObjectSerializer>()
-                        .AddSingleton<MainSettingsProvider>()
-                        .AddSingleton<TwitchService>()
-                        .AddSingleton<TwitchServiceManager>()
-                        .AddSingleton<TwitchMessageParser>()
-                        .AddSingleton<TwitchDataProvider>()
-                        .AddSingleton<TwitchCheermoteProvider>()
-                        .AddSingleton<TwitchBadgeProvider>()
-                        .AddSingleton<BTTVDataProvider>()
-                        .AddSingleton<FFZDataProvider>()
-                        .AddSingleton<IChatService>(x =>
-                            new ChatServiceMultiplexer(
-                                x.GetService<ILogger<ChatServiceMultiplexer>>(),
-                                new List<IChatService>()
-                                {
-                                    x.GetService<TwitchService>()
-                                }
-                            )
-                        )
-                        .AddSingleton<IChatServiceManager>(x =>
-                            new ChatServiceManager(
-                                x.GetService<ILogger<ChatServiceManager>>(),
-                                x.GetService<IChatService>(),
-                                new List<IChatServiceManager>
-                                {
-                                    x.GetService<TwitchServiceManager>()
-                                }
-                            )
-                        )
-                        .AddSingleton<IPathProvider, PathProvider>()
-                        .AddSingleton<IUserAuthProvider, UserAuthProvider>()
-                        .AddSingleton<IWebLoginProvider, WebLoginProvider>()
-                        .AddSingleton<IEmojiParser, FrwTwemojiParser>()
-                        .AddSingleton<IDefaultBrowserLauncherService, ProcessDotStartBrowserLauncherService>()
-                        .AddTransient<IWebSocketService, WebSocket4NetServiceProvider>();
-                    _serviceProvider = serviceCollection.BuildServiceProvider();
+	            if (_instance is not null)
+	            {
+		            return _instance;
+	            }
 
-                    var settings = _serviceProvider.GetService<MainSettingsProvider>();
-                    if (!settings.DisableWebApp)
-                    {
-                        _serviceProvider.GetService<IWebLoginProvider>().Start();
-                        if (settings.LaunchWebAppOnStartup)
-                        {
-                            _serviceProvider.GetService<IDefaultBrowserLauncherService>().Launch($"http://localhost:{_serviceProvider.GetService<MainSettingsProvider>().WebAppPort}");
-                        }
-                    }
+	            _instance = new ChatCoreInstance();
+                var serviceCollection = new ServiceCollection();
+                serviceCollection
+	                .AddLogging(builder =>
+	                {
+#if DEBUG
+		                builder.AddConsole();
+#endif
+		                builder.AddProvider(new CustomSinkProvider(_instance));
+	                })
+	                .AddSingleton<Random>()
+	                .AddSingleton<HttpClient>()
+	                .AddSingleton<ObjectSerializer>()
+	                .AddSingleton<MainSettingsProvider>()
+	                .AddSingleton<TwitchService>()
+	                .AddSingleton<TwitchServiceManager>()
+	                .AddSingleton<TwitchMessageParser>()
+	                .AddSingleton<TwitchDataProvider>()
+	                .AddSingleton<TwitchCheermoteProvider>()
+	                .AddSingleton<TwitchBadgeProvider>()
+	                .AddSingleton<BTTVDataProvider>()
+	                .AddSingleton<FFZDataProvider>()
+	                .AddSingleton<IChatService>(x =>
+		                new ChatServiceMultiplexer(
+			                x.GetService<ILogger<ChatServiceMultiplexer>>(),
+			                new List<IChatService>()
+			                {
+				                x.GetService<TwitchService>()
+			                }
+		                )
+	                )
+	                .AddSingleton<IChatServiceManager>(x =>
+		                new ChatServiceManager(
+			                x.GetService<ILogger<ChatServiceManager>>(),
+			                x.GetService<IChatService>(),
+			                new List<IChatServiceManager>
+			                {
+				                x.GetService<TwitchServiceManager>()
+			                }
+		                )
+	                )
+	                .AddSingleton<IPathProvider, PathProvider>()
+	                .AddSingleton<IUserAuthProvider, UserAuthProvider>()
+	                .AddSingleton<IWebLoginProvider, WebLoginProvider>()
+	                .AddSingleton<IEmojiParser, FrwTwemojiParser>()
+	                .AddSingleton<IDefaultBrowserLauncherService, ProcessDotStartBrowserLauncherService>()
+	                .AddTransient<IWebSocketService, WebSocket4NetServiceProvider>();
+                _serviceProvider = serviceCollection.BuildServiceProvider();
+
+                var settings = _serviceProvider.GetService<MainSettingsProvider>();
+                if (settings.DisableWebApp)
+                {
+	                return _instance;
+                }
+
+                _serviceProvider.GetService<IWebLoginProvider>().Start();
+                if (settings.LaunchWebAppOnStartup)
+                {
+	                _serviceProvider.GetService<IDefaultBrowserLauncherService>().Launch($"http://localhost:{_serviceProvider.GetService<MainSettingsProvider>().WebAppPort}");
                 }
                 return _instance;
             }
         }
 
-        private static void _webLoginProvider_OnLoginDataUpdated(LoginCredentials obj)
-        {
-            Console.WriteLine($"Twitch_OAuthToken: {obj.Twitch_OAuthToken}");
-        }
-
-        private object _runLock = new object();
         /// <summary>
         /// Starts all services if they haven't been already.
         /// </summary>
@@ -118,7 +120,7 @@ namespace ChatCore
 
                 var services = _serviceProvider.GetService<IChatServiceManager>();
                 services.Start(Assembly.GetCallingAssembly());
-                return services.GetService() as ChatServiceMultiplexer;
+                return (ChatServiceMultiplexer) services.GetService();
             }
         }
 
@@ -148,7 +150,7 @@ namespace ChatCore
 
                 var twitch = _serviceProvider.GetService<TwitchServiceManager>();
                 twitch.Start(Assembly.GetCallingAssembly());
-                return twitch.GetService() as TwitchService;
+                return (TwitchService) twitch.GetService();
             }
         }
 
