@@ -113,13 +113,15 @@ namespace ChatCore
             {
                 if (_serviceProvider == null)
                 {
-                    throw new StreamCoreNotInitializedException("Make sure to call StreamCoreInstance.Create() to initialize StreamCore!");
+                    throw new ChatCoreNotInitializedException("Make sure to call ChatCoreInstance.Create() to initialize ChatCore!");
                 }
+
                 var services = _serviceProvider.GetService<IChatServiceManager>();
                 services.Start(Assembly.GetCallingAssembly());
                 return services.GetService() as ChatServiceMultiplexer;
             }
         }
+
         /// <summary>
         /// Stops all services as long as no references remain. Make sure to unregister any callbacks first!
         /// </summary>
@@ -130,6 +132,7 @@ namespace ChatCore
                 _serviceProvider.GetService<IChatServiceManager>().Stop(Assembly.GetCallingAssembly());
             }
         }
+
         /// <summary>
         /// Starts the Twitch services if they haven't been already.
         /// </summary>
@@ -140,13 +143,15 @@ namespace ChatCore
             {
                 if (_serviceProvider == null)
                 {
-                    throw new StreamCoreNotInitializedException("Make sure to call StreamCoreInstance.Create() to initialize StreamCore!");
+                    throw new ChatCoreNotInitializedException("Make sure to call ChatCoreInstance.Create() to initialize ChatCore!");
                 }
+
                 var twitch = _serviceProvider.GetService<TwitchServiceManager>();
                 twitch.Start(Assembly.GetCallingAssembly());
                 return twitch.GetService() as TwitchService;
             }
         }
+
         /// <summary>
         /// Stops the Twitch services as long as no references remain. Make sure to unregister any callbacks first!
         /// </summary>
@@ -167,8 +172,9 @@ namespace ChatCore
             {
                 if (_serviceProvider == null)
                 {
-                    throw new StreamCoreNotInitializedException("Make sure to call StreamCoreInstance.Create() to initialize StreamCore!");
+                    throw new ChatCoreNotInitializedException("Make sure to call ChatCoreInstance.Create() to initialize ChatCore!");
                 }
+
                 _serviceProvider.GetService<IDefaultBrowserLauncherService>().Launch($"http://localhost:{_serviceProvider.GetService<MainSettingsProvider>().WebAppPort}");
             }
         }
