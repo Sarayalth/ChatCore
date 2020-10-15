@@ -130,7 +130,7 @@ namespace ChatCore.Services.Twitch
                                 // This isn't a typo, when you first sign in your username is in the channel id.
                                 _logger.LogInformation($"Logged into Twitch as {_loggedInUsername}");
                                 _websocketService.ReconnectDelay = 500;
-                                _onLoginCallbacks?.InvokeAll(assembly, this, _logger);
+                                LoginCallbacks?.InvokeAll(assembly!, this, _logger);
                                 foreach (var channel in _authManager.Credentials.Twitch_Channels)
                                 {
                                     JoinChannel(channel);
@@ -147,7 +147,7 @@ namespace ChatCore.Services.Twitch
                                 goto case "PRIVMSG";
                             case "USERNOTICE":
                             case "PRIVMSG":
-                                _onTextMessageReceivedCallbacks?.InvokeAll(assembly, this, twitchMessage, _logger);
+                                TextMessageReceivedCallbacks?.InvokeAll(assembly!, this, twitchMessage, _logger);
                                 continue;
                             case "JOIN":
                                 //_logger.LogInformation($"{twitchMessage.Sender.Name} JOINED {twitchMessage.Channel.Id}. LoggedInuser: {LoggedInUser.Name}");
@@ -157,7 +157,7 @@ namespace ChatCore.Services.Twitch
                                     {
                                         _channels[twitchMessage.Channel.Id] = twitchMessage.Channel.AsTwitchChannel();
                                         _logger.LogInformation($"Added channel {twitchMessage.Channel.Id} to the channel list.");
-                                        _onJoinRoomCallbacks?.InvokeAll(assembly, this, twitchMessage.Channel, _logger);
+                                        JoinRoomCallbacks?.InvokeAll(assembly!, this, twitchMessage.Channel, _logger);
                                     }
                                 }
                                 continue;
@@ -169,7 +169,7 @@ namespace ChatCore.Services.Twitch
                                     {
                                         _dataProvider.TryReleaseChannelResources(twitchMessage.Channel);
                                         _logger.LogInformation($"Removed channel {channel.Id} from the channel list.");
-                                        _onLeaveRoomCallbacks?.InvokeAll(assembly, this, twitchMessage.Channel, _logger);
+                                        LeaveRoomCallbacks?.InvokeAll(assembly!, this, twitchMessage.Channel, _logger);
                                     }
                                 }
                                 continue;
@@ -177,9 +177,9 @@ namespace ChatCore.Services.Twitch
                                 _channels[twitchMessage.Channel.Id] = twitchMessage.Channel;
                                 _dataProvider.TryRequestChannelResources(twitchMessage.Channel, (resources) =>
                                 {
-                                    _onChannelResourceDataCached?.InvokeAll(assembly, this, twitchMessage.Channel, resources);
+                                    ChannelResourceDataCached?.InvokeAll(assembly!, this, twitchMessage.Channel, resources);
                                 });
-                                _onRoomStateUpdatedCallbacks?.InvokeAll(assembly, this, twitchMessage.Channel, _logger);
+                                RoomStateUpdatedCallbacks?.InvokeAll(assembly!, this, twitchMessage.Channel, _logger);
                                 continue;
                             case "USERSTATE":
                             case "GLOBALUSERSTATE":
@@ -191,12 +191,12 @@ namespace ChatCore.Services.Twitch
                                 continue;
                             case "CLEARCHAT":
                                 twitchMessage.Metadata.TryGetValue("target-user-id", out var targetUser);
-                                _onChatClearedCallbacks?.InvokeAll(assembly, this, targetUser, _logger);
+                                ChatClearedCallbacks?.InvokeAll(assembly!, this, targetUser, _logger);
                                 continue;
                             case "CLEARMSG":
                                 if (twitchMessage.Metadata.TryGetValue("target-msg-id", out var targetMessage))
                                 {
-                                    _onMessageClearedCallbacks?.InvokeAll(assembly, this, targetMessage, _logger);
+                                    MessageClearedCallbacks?.InvokeAll(assembly!, this, targetMessage, _logger);
                                 }
                                 continue;
                             //case "MODE":

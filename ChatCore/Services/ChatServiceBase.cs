@@ -9,60 +9,61 @@ namespace ChatCore.Services
 {
     public class ChatServiceBase
     {
-        protected ConcurrentDictionary<Assembly, Action<IChatService, IChatMessage>> _onTextMessageReceivedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, IChatMessage>>();
+        protected readonly ConcurrentDictionary<Assembly, Action<IChatService, IChatMessage>> TextMessageReceivedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, IChatMessage>>();
+        protected readonly ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>> JoinRoomCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>>();
+        protected readonly ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>> LeaveRoomCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>>();
+        protected readonly ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>> RoomStateUpdatedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>>();
+        protected readonly ConcurrentDictionary<Assembly, Action<IChatService>> LoginCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService>>();
+        protected readonly ConcurrentDictionary<Assembly, Action<IChatService, string>> ChatClearedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, string>>();
+        protected readonly ConcurrentDictionary<Assembly, Action<IChatService, string>> MessageClearedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, string>>();
+        protected readonly ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel, Dictionary<string, IChatResourceData>>> ChannelResourceDataCached = new ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel, Dictionary<string, IChatResourceData>>>();
+
         public event Action<IChatService, IChatMessage> OnTextMessageReceived
         {
-            add => _onTextMessageReceivedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
-            remove => _onTextMessageReceivedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
+            add => TextMessageReceivedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
+            remove => TextMessageReceivedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
 
-        protected ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>> _onJoinRoomCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>>();
         public event Action<IChatService, IChatChannel> OnJoinChannel
         {
-            add => _onJoinRoomCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
-            remove => _onJoinRoomCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
+            add => JoinRoomCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
+            remove => JoinRoomCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
 
-        protected ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>> _onLeaveRoomCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>>();
         public event Action<IChatService, IChatChannel> OnLeaveChannel
         {
-            add => _onLeaveRoomCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
-            remove => _onLeaveRoomCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
+            add => LeaveRoomCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
+            remove => LeaveRoomCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
 
-        protected ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>> _onRoomStateUpdatedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel>>();
         public event Action<IChatService, IChatChannel> OnRoomStateUpdated
         {
-            add => _onRoomStateUpdatedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
-            remove => _onRoomStateUpdatedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
+            add => RoomStateUpdatedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
+            remove => RoomStateUpdatedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
 
-        protected ConcurrentDictionary<Assembly, Action<IChatService>> _onLoginCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService>>();
         public event Action<IChatService> OnLogin
         {
-            add => _onLoginCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
-            remove => _onLoginCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
+            add => LoginCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
+            remove => LoginCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
 
-        protected ConcurrentDictionary<Assembly, Action<IChatService, string>> _onChatClearedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, string>>();
         public event Action<IChatService, string> OnChatCleared
         {
-            add => _onChatClearedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
-            remove => _onChatClearedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
+            add => ChatClearedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
+            remove => ChatClearedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
 
-        protected ConcurrentDictionary<Assembly, Action<IChatService, string>> _onMessageClearedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, string>>();
         public event Action<IChatService, string> OnMessageCleared
         {
-            add => _onMessageClearedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
-            remove => _onMessageClearedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
+            add => MessageClearedCallbacks.AddAction(Assembly.GetCallingAssembly(), value);
+            remove => MessageClearedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
 
-        protected ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel, Dictionary<string, IChatResourceData>>> _onChannelResourceDataCached = new ConcurrentDictionary<Assembly, Action<IChatService, IChatChannel, Dictionary<string, IChatResourceData>>>();
         public event Action<IChatService, IChatChannel, Dictionary<string, IChatResourceData>> OnChannelResourceDataCached
         {
-            add => _onChannelResourceDataCached.AddAction(Assembly.GetCallingAssembly(), value);
-            remove => _onChannelResourceDataCached.RemoveAction(Assembly.GetCallingAssembly(), value);
+            add => ChannelResourceDataCached.AddAction(Assembly.GetCallingAssembly(), value);
+            remove => ChannelResourceDataCached.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
     }
 }
