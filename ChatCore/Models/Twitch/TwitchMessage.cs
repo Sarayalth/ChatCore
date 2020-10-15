@@ -42,25 +42,29 @@ namespace ChatCore.Models.Twitch
             if (obj.TryGetKey(nameof(Emotes), out var emotes))
             {
                 var emoteList = new List<IChatEmote>();
-                foreach (var emote in emotes.AsArray)
+                if (emotes.AsArray is not null)
                 {
-                    if(emote.Value.TryGetKey(nameof(IChatEmote.Id), out var emoteNode))
-                    {
-                        var emoteId = emoteNode.Value;
-                        if (emoteId.StartsWith("Twitch") || emoteId.StartsWith("BTTV") || emoteId.StartsWith("FFZ"))
-                        {
-                            emoteList.Add(new TwitchEmote(emote.Value.ToString()));
-                        }
-                        else if (emoteId.StartsWith("Emoji"))
-                        {
-                            emoteList.Add(new Emoji(emote.Value.ToString()));
-                        }
-                        else
-                        {
-                            emoteList.Add(new UnknownChatEmote(emote.Value.ToString()));
-                        }
-                    }
+	                foreach (var emote in emotes.AsArray)
+	                {
+		                if (emote.Value.TryGetKey(nameof(IChatEmote.Id), out var emoteNode))
+		                {
+			                var emoteId = emoteNode.Value;
+			                if (emoteId.StartsWith("Twitch") || emoteId.StartsWith("BTTV") || emoteId.StartsWith("FFZ"))
+			                {
+				                emoteList.Add(new TwitchEmote(emote.Value.ToString()));
+			                }
+			                else if (emoteId.StartsWith("Emoji"))
+			                {
+				                emoteList.Add(new Emoji(emote.Value.ToString()));
+			                }
+			                else
+			                {
+				                emoteList.Add(new UnknownChatEmote(emote.Value.ToString()));
+			                }
+		                }
+	                }
                 }
+
                 Emotes = emoteList.ToArray();
             }
             if (obj.TryGetKey(nameof(Type), out var type)) { Type = type.Value; }
