@@ -34,7 +34,7 @@ namespace ChatCore.Services
 	    public void Start()
         {
             if (_pageData == null)
-                {
+            {
 	            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ChatCore.Resources.Web.index.html")!);
 	            _pageData = reader.ReadToEnd();
 	            //_logger.LogInformation($"PageData: {pageData}");
@@ -128,7 +128,7 @@ namespace ChatCore.Services
                 for (var i = 0; i < _authManager.Credentials.Twitch_Channels.Count; i++)
                 {
                     var channel = _authManager.Credentials.Twitch_Channels[i];
-                    twitchChannelHtmlString.Append($"<span id=\"twitch_channel_{i}\" class=\"chip \">{channel}<input type=\"text\" class=\"form-input\" name=\"twitch_channel\" style=\"display: none; \" value=\"{channel}\" /><button type=\"button\" onclick=\"removeTwitchChannel('twitch_channel_{i}')\" class=\"btn btn-clear\" aria-label=\"Close\" role=\"button\"></button></span>");
+                    twitchChannelHtmlString.Append($"<span id=\"twitch_channel_{i}\" class=\"chip \"><div style=\"overflow: hidden;text-overflow: ellipsis;\">{channel}</div><input type=\"text\" class=\"form-input\" name=\"twitch_channel\" style=\"display: none; \" value=\"{channel}\" /><button type=\"button\" onclick=\"removeTwitchChannel('twitch_channel_{i}')\" class=\"btn btn-clear\" aria-label=\"Close\" role=\"button\"></button></span>");
                 }
 
                 var sectionHtml = _settings.GetSettingsAsHtml();
