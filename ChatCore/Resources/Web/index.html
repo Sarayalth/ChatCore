@@ -57,7 +57,7 @@
                             <label class="form-label">Channels</label>
                             <div id="twitch-channel-container" class="my-2">
                                 {TwitchChannelHtml}
-                                <span id="add_twitch_channel_button" class="chip">
+                                <span id="add_twitch_channel_button_span" class="chip">
                                     <button id="add_twitch_channel_button" type="button" onclick="addTwitchChannel()" class="btn btn-link btn-sm" aria-label="Close" role="button">+</button>
                                 </span>
                             </div>
@@ -106,7 +106,7 @@
             span.innerHTML =
                 "<input type=\"text\" class=\"borderless-input\" name=\"twitch_channel\" placeholder=\"Twitch Channel\" value=\"\" />" +
                 "<button type=\"button\" onclick=\"removeTwitchChannel('" + channelId + "')\" class=\"btn btn-clear\" aria-label=\"Close\" role=\"button\" />";
-            container.insertBefore(span, document.getElementById("add_twitch_channel_button"));
+            container.insertBefore(span, document.getElementById("add_twitch_channel_button_span"));
             //container.appendChild(span);
 
             twitchIdCounter++
@@ -116,7 +116,7 @@
             let channel = document.getElementById(channelId);
             container.removeChild(channel);
         }
-        
+
     </script>
 
 </body>
