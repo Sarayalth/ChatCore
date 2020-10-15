@@ -23,7 +23,9 @@ namespace ChatCore.Models.Twitch
             for (var i = 1; i < Tiers.Count; i++)
             {
                 if (numBits < Tiers[i].MinBits)
-                    return Tiers[i - 1];
+                {
+	                return Tiers[i - 1];
+                }
             }
             return Tiers[0];
         }
