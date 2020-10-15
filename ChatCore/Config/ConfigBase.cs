@@ -7,13 +7,13 @@ namespace ChatCore.Config
 {
     public class ConfigBase<T> where T: ConfigBase<T>
     {
-        private object _saveLock = new object();
-        private string _configDirectory, _configFilePath;
-        private FileSystemWatcher _watcher;
-        private ObjectSerializer _configSerializer;
-        private bool _saving = false;
-        private bool _saveTriggersConfigChangedEvent = false;
-        public event Action<T> OnConfigChanged;
+        private readonly object _saveLock = new object();
+        private readonly string _configFilePath;
+        private readonly FileSystemWatcher _watcher;
+        private readonly ObjectSerializer _configSerializer;
+        private readonly bool _saveTriggersConfigChangedEvent;
+        private bool _saving;
+        public event Action<T>? OnConfigChanged;
 
         /// <summary>
         /// A base config class that can be used to quickly and easily implement config files with a variety of data types.
@@ -21,16 +21,14 @@ namespace ChatCore.Config
         /// <param name="configDirectory">The directory the config should be loaded from/saved to</param>
         /// <param name="configName">The name of the config file, excluding a filetype (which will be .ini)</param>
         /// <param name="saveTriggersConfigChangedEvent">If set to true, saving the config will trigger the OnConfigChanged event</param>
-        /// <param name="oldStreamCoreConfigPath">The p</param>
-        public ConfigBase(string configDirectory, string configName, bool saveTriggersConfigChangedEvent = false)
+        protected ConfigBase(string configDirectory, string configName, bool saveTriggersConfigChangedEvent = false)
         {
-            _saveTriggersConfigChangedEvent = saveTriggersConfigChangedEvent;
+	        _saveTriggersConfigChangedEvent = saveTriggersConfigChangedEvent;
             _configSerializer = new ObjectSerializer();
-            _configDirectory = configDirectory;
             _configFilePath = Path.Combine(configDirectory, $"{configName}.ini");
-            _watcher = new FileSystemWatcher()
+            _watcher = new FileSystemWatcher
             {
-                Path = _configDirectory,
+                Path = configDirectory,
                 NotifyFilter = NotifyFilters.LastWrite,
                 Filter = Path.GetFileName(_configFilePath)
             };
@@ -38,7 +36,7 @@ namespace ChatCore.Config
             _watcher.EnableRaisingEvents = true;
 
             Load();
-            Save(); // Save unconditionally after loading, incase we added new config options so they get written to file.
+            Save(); // Save unconditionally after loading, in case we added new config options so they get written to file.
         }
 
         ~ConfigBase()
@@ -63,7 +61,7 @@ namespace ChatCore.Config
                 {
                     _configSerializer.Load(this, _configFilePath);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //Logger.log.Error($"An unhandled exception occurred while trying to load config! {ex.ToString()}");
                 }
@@ -79,7 +77,7 @@ namespace ChatCore.Config
                 {
                     _configSerializer.Save(this, _configFilePath);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     if (!isRetry)
                     {
@@ -91,6 +89,7 @@ namespace ChatCore.Config
                         });
                     }
                 }
+
                 _saving = false;
             }
         }

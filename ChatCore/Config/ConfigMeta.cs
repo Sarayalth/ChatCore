@@ -8,7 +8,7 @@ namespace ChatCore.Config
         public string Comment;
         public ConfigMeta()
         {
-            Comment = null;
+            Comment = null!;
         }
     }
 }

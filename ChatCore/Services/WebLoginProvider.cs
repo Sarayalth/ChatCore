@@ -14,7 +14,7 @@ namespace ChatCore.Services
 {
     public class WebLoginProvider : IWebLoginProvider
     {
-        public WebLoginProvider(ILogger<WebLoginProvider> logger, IUserAuthProvider authManager, MainSettingsProvider settings)
+	    public WebLoginProvider(ILogger<WebLoginProvider> logger, IUserAuthProvider authManager, MainSettingsProvider settings)
         {
             _logger = logger;
             _authManager = authManager;
@@ -29,27 +29,27 @@ namespace ChatCore.Services
         private static string pageData;
         private SemaphoreSlim _requestLock = new SemaphoreSlim(1, 1);
 
-        public void Start()
+	    public void Start()
         {
             if (pageData == null)
             {
                 using (var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ChatCore.Resources.Web.index.html")))
                 {
                     pageData = reader.ReadToEnd();
-                    //_logger.LogInformation($"PageData: {pageData}");
-                }
+	            //_logger.LogInformation($"PageData: {pageData}");
+            }
             }
             if (_listener == null)
             {
-                _cancellationToken = new CancellationTokenSource();
-                _listener = new HttpListener();
-                _listener.Prefixes.Add($"http://localhost:{_settings.WebAppPort}/");
+            _cancellationToken = new CancellationTokenSource();
+            _listener = new HttpListener();
+            _listener.Prefixes.Add($"http://localhost:{_settings.WebAppPort}/");
                 Task.Run(async () =>
-                {
-                    _listener.Start();
-                    _listener.BeginGetContext(OnContext, null);
-                });
-            }
+            {
+	            _listener.Start();
+	            _listener.BeginGetContext(OnContext, null);
+            });
+        }
         }
 
         private async void OnContext(IAsyncResult res)
@@ -67,8 +67,8 @@ namespace ChatCore.Services
                 {
                     using (var reader = new StreamReader(req.InputStream, req.ContentEncoding))
                     {
-                        var postStr = reader.ReadToEnd();
-                        List<string> twitchChannels = new List<string>(), mixerChannels = new List<string>();
+                        var postStr = await reader.ReadToEndAsync();
+                        var twitchChannels = new List<string>();
 
                         var postDict = new Dictionary<string, string>();
                         foreach (var postData in postStr.Split('&'))
@@ -93,15 +93,6 @@ namespace ChatCore.Services
                                         _logger.LogInformation($"TwitchChannel: {twitchChannel}");
                                         twitchChannels.Add(twitchChannel);
                                         break;
-                                    case "mixer_channel":
-                                        var mixerChannel = split[1].ToLower();
-                                        if (!string.IsNullOrWhiteSpace(mixerChannel) && !_authManager.Credentials.Mixer_Channels.Contains(mixerChannel))
-                                        {
-                                            _authManager.Credentials.Mixer_Channels.Add(mixerChannel);
-                                        }
-                                        _logger.LogInformation($"MixerChannel: {mixerChannel}");
-                                        mixerChannels.Add(mixerChannel);
-                                        break;
                                 }
                             }
                             catch (Exception ex)
@@ -117,14 +108,7 @@ namespace ChatCore.Services
                                 _authManager.Credentials.Twitch_Channels.Remove(channel);
                             }
                         }
-                        foreach (var channel in _authManager.Credentials.Mixer_Channels.ToArray())
-                        {
-                            // Remove any channels that weren't present in the post data
-                            if (!mixerChannels.Contains(channel))
-                            {
-                                _authManager.Credentials.Mixer_Channels.Remove(channel);
-                            }
-                        }
+
                         _authManager.Save();
                         _settings.SetFromDictionary(postDict);
                         _settings.Save();
@@ -140,30 +124,14 @@ namespace ChatCore.Services
                     var channel = _authManager.Credentials.Twitch_Channels[i];
                     twitchChannelHtmlString.Append($"<span id=\"twitch_channel_{i}\" class=\"chip \">{channel}<input type=\"text\" class=\"form-input\" name=\"twitch_channel\" style=\"display: none; \" value=\"{channel}\" /><button type=\"button\" onclick=\"removeTwitchChannel('twitch_channel_{i}')\" class=\"btn btn-clear\" aria-label=\"Close\" role=\"button\"></button></span>");
                 }
-                var mixerChannelHtmlString = new StringBuilder();
-                for (var i = 0; i < _authManager.Credentials.Mixer_Channels.Count; i++)
-                {
-                    var channel = _authManager.Credentials.Mixer_Channels[i];
-                    mixerChannelHtmlString.Append($"<span id=\"mixer_channel_{i}\" class=\"chip \">{channel}<input type=\"text\" class=\"form-input\" name=\"mixer_channel\" style=\"display: none; \" value=\"{channel}\" /><button type=\"button\" onclick=\"removeMixerChannel('mixer_channel_{i}')\" class=\"btn btn-clear\" aria-label=\"Close\" role=\"button\"></button></span>");
-                }
-                var mixerLinkHtmlString = new StringBuilder();
-                if(!string.IsNullOrEmpty(_authManager.Credentials.Mixer_RefreshToken))
-                {
-                    mixerLinkHtmlString.Append("<button class=\"btn btn-error\" onclick=\"window.location.href='mixer'\" type=\"button\">Click to unlink your Mixer account</button></br></br>");
-                }
-                else
-                {
-                    mixerLinkHtmlString.Append("<button class=\"btn btn-success\" onclick=\"window.location.href='mixer'\" type=\"button\">Click to link your Mixer account</button></br></br>");
-                }
-                var sectionHTML = _settings.GetSettingsAsHTML();
-                pageBuilder.Replace("{WebAppSettingsHTML}", sectionHTML["WebApp"]);
-                pageBuilder.Replace("{GlobalSettingsHTML}", sectionHTML["Global"]);
-                pageBuilder.Replace("{TwitchSettingsHTML}", sectionHTML["Twitch"]);
+
+                var sectionHtml = _settings.GetSettingsAsHtml();
+                pageBuilder.Replace("{WebAppSettingsHTML}", sectionHtml["WebApp"]);
+                pageBuilder.Replace("{GlobalSettingsHTML}", sectionHtml["Global"]);
+                pageBuilder.Replace("{TwitchSettingsHTML}", sectionHtml["Twitch"]);
                 pageBuilder.Replace("{TwitchChannelHtml}", twitchChannelHtmlString.ToString());
                 pageBuilder.Replace("{TwitchOAuthToken}", _authManager.Credentials.Twitch_OAuthToken);
-                pageBuilder.Replace("{MixerSettingsHTML}", sectionHTML["Mixer"]);
-                pageBuilder.Replace("{MixerChannelHtml}", mixerChannelHtmlString.ToString());
-                pageBuilder.Replace("{MixerLinkHtml}", mixerLinkHtmlString.ToString());
+
                 var data = Encoding.UTF8.GetBytes(pageBuilder.ToString());
                 resp.ContentType = "text/html";
                 resp.ContentEncoding = Encoding.UTF8;
@@ -181,11 +149,13 @@ namespace ChatCore.Services
         }
         public void Stop()
         {
-            if (!(_cancellationToken is null))
-            {
-                _cancellationToken.Cancel();
-                _logger.LogInformation("Stopped");
-            }
+	        if (_cancellationToken is null)
+	        {
+		        return;
+	        }
+
+	        _cancellationToken.Cancel();
+	        _logger.LogInformation("Stopped");
         }
     }
 }
