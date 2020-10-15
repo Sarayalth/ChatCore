@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using ChatCore.Config;
+﻿using ChatCore.Config;
 using ChatCore.Interfaces;
 using System.Collections.Generic;
 using System.IO;
@@ -31,19 +30,18 @@ namespace ChatCore.Services
         [ConfigMeta(Comment = "When enabled, Twitch cheermotes will be parsed.")]
         public bool ParseCheermotes = true;
 
-        public MainSettingsProvider(ILogger<MainSettingsProvider> logger, IPathProvider pathProvider)
+        private readonly IPathProvider _pathProvider;
+        private readonly ObjectSerializer _configSerializer;
+
+        public MainSettingsProvider(IPathProvider pathProvider)
         {
-            _logger = logger;
             _pathProvider = pathProvider;
             _configSerializer = new ObjectSerializer();
+
             var path = Path.Combine(_pathProvider.GetDataPath(), "settings.ini");
             _configSerializer.Load(this, path);
             _configSerializer.Save(this, path);
         }
-
-        private ILogger _logger;
-        private IPathProvider _pathProvider;
-        private ObjectSerializer _configSerializer;
 
         public void Save()
         {

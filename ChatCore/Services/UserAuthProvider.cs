@@ -8,51 +8,55 @@ using System.Threading.Tasks;
 
 namespace ChatCore.Services
 {
-    class OldStreamCoreConfig
+	internal class OldStreamCoreConfig
     {
-        public string TwitchChannelName;
-        public string TwitchUsername;
-        public string TwitchOAuthToken;
+        public string? TwitchChannelName { get; set; }
+        public string? TwitchUsername { get; set; }
+        public string? TwitchOAuthToken { get; set; }
     }
 
     public class UserAuthProvider : IUserAuthProvider
     {
-        public event Action<LoginCredentials> OnCredentialsUpdated;
+	    private readonly string _credentialsPath;
+	    private readonly ObjectSerializer _credentialSerializer;
+
+        public event Action<LoginCredentials>? OnCredentialsUpdated;
 
         public LoginCredentials Credentials { get; } = new LoginCredentials();
 
         // If this is set, old StreamCore config data will be read in from this file.
-        internal static string OldConfigPath = null;
+        internal static string OldConfigPath = null!;
 
         public UserAuthProvider(ILogger<UserAuthProvider> logger, IPathProvider pathProvider)
         {
-            _logger = logger;
-            _pathProvider = pathProvider;
-            _credentialsPath = Path.Combine(_pathProvider.GetDataPath(), "auth.ini");
+	        _credentialsPath = Path.Combine(pathProvider.GetDataPath(), "auth.ini");
             _credentialSerializer = new ObjectSerializer();
             _credentialSerializer.Load(Credentials, _credentialsPath);
 
-            Task.Delay(1000).ContinueWith((task) =>
+            Task.Delay(1000).ContinueWith(_ =>
             {
                 if (!string.IsNullOrEmpty(OldConfigPath) && File.Exists(OldConfigPath))
                 {
-                    _logger.LogInformation($"Trying to convert old StreamCore config at path {OldConfigPath}");
+	                logger.LogInformation($"Trying to convert old StreamCore config at path {OldConfigPath}");
                     var old = new OldStreamCoreConfig();
                     _credentialSerializer.Load(old, OldConfigPath);
+
                     if (!string.IsNullOrEmpty(old.TwitchChannelName))
                     {
-                        var oldName = old.TwitchChannelName.ToLower().Replace(" ", "");
-                        if (!Credentials.Twitch_Channels.Contains(oldName))
+                        var oldName = old.TwitchChannelName?.ToLower().Replace(" ", "");
+                        if (oldName != null && !Credentials.Twitch_Channels.Contains(oldName))
                         {
                             Credentials.Twitch_Channels.Add(oldName);
-                            _logger.LogInformation($"Added channel {oldName} from old StreamCore config.");
+                            logger.LogInformation($"Added channel {oldName} from old StreamCore config.");
                         }
                     }
+
                     if (!string.IsNullOrEmpty(old.TwitchOAuthToken))
                     {
-                        Credentials.Twitch_OAuthToken = old.TwitchOAuthToken;
-                        _logger.LogInformation($"Pulled in old Twitch auth info from StreamCore config.");
+                        Credentials.Twitch_OAuthToken = old.TwitchOAuthToken!;
+                        logger.LogInformation($"Pulled in old Twitch auth info from StreamCore config.");
                     }
+
                     var convertedPath = OldConfigPath + ".converted";
                     try
                     {
@@ -67,22 +71,15 @@ namespace ChatCore.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "An exception occurred while trying to yeet old StreamCore config!");
+	                    logger.LogWarning(ex, "An exception occurred while trying to yeet old StreamCore config!");
                     }
                 }
             });
         }
 
-        private ILogger _logger;
-        private IPathProvider _pathProvider;
-        private string _credentialsPath;
-        private ObjectSerializer _credentialSerializer;
-        private DateTime _lastCredentialUpdateTime = DateTime.UtcNow;
-
         public void Save(bool callback = true)
         {
             _credentialSerializer.Save(Credentials, _credentialsPath);
-            _lastCredentialUpdateTime = DateTime.UtcNow;
             if (callback)
             {
                 OnCredentialsUpdated?.Invoke(Credentials);
