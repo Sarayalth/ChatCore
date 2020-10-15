@@ -53,7 +53,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onChannelResourceDataCached.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, resources, _logger);
+                ChannelResourceDataCached.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, resources, _logger);
             }
         }
 
@@ -61,7 +61,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onMessageClearedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, messageId, _logger);
+                MessageClearedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, messageId, _logger);
             }
         }
 
@@ -69,7 +69,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onChatClearedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, userId, _logger);
+                ChatClearedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, userId, _logger);
             }
         }
 
@@ -77,7 +77,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onLoginCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, _logger);
+                LoginCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, _logger);
             }
         }
 
@@ -85,7 +85,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onLeaveRoomCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
+                LeaveRoomCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
             }
         }
 
@@ -93,7 +93,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onRoomStateUpdatedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
+                RoomStateUpdatedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
             }
         }
 
@@ -101,7 +101,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onTextMessageReceivedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, message, _logger);
+                TextMessageReceivedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, message, _logger);
             }
         }
 
@@ -109,7 +109,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onJoinRoomCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
+                JoinRoomCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
             }
         }
 
