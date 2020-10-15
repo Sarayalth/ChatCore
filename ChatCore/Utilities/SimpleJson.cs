@@ -43,6 +43,7 @@ using System.Text;
 
 namespace ChatCore.Utilities
 {
+	// ReSharper disable once InconsistentNaming
 	public enum JSONNodeType
 	{
 		Array = 1,
@@ -55,12 +56,14 @@ namespace ChatCore.Utilities
 		Custom = 0xFF,
 	}
 
+	// ReSharper disable once InconsistentNaming
 	public enum JSONTextMode
 	{
 		Compact,
 		Indent
 	}
 
+	// ReSharper disable once InconsistentNaming
 	public abstract partial class JSONNode
 	{
 		#region Enumerators
@@ -199,10 +202,13 @@ namespace ChatCore.Utilities
 
 		public abstract JSONNodeType Tag { get; }
 
+		// ReSharper disable once ValueParameterNotUsed
 		public virtual JSONNode this[int aIndex] { get => null!; set { } }
 
+		// ReSharper disable once ValueParameterNotUsed
 		public virtual JSONNode this[string aKey] { get => null!; set { } }
 
+		// ReSharper disable once ValueParameterNotUsed
 		public virtual string Value { get => ""; set { } }
 
 		public virtual int Count => 0;
@@ -214,6 +220,7 @@ namespace ChatCore.Utilities
 		public virtual bool IsArray => false;
 		public virtual bool IsObject => false;
 
+		// ReSharper disable once ValueParameterNotUsed
 		public virtual bool Inline { get => false; set { } }
 
 		public virtual void Add(string? aKey, JSONNode? aItem)
@@ -752,6 +759,7 @@ namespace ChatCore.Utilities
 	}
 	// End of JSONNode
 
+	// ReSharper disable once InconsistentNaming
 	public partial class JSONArray : JSONNode
 	{
 		private readonly List<JSONNode> _mList = new List<JSONNode>();
@@ -922,6 +930,7 @@ namespace ChatCore.Utilities
 	}
 	// End of JSONArray
 
+	// ReSharper disable once InconsistentNaming
 	public partial class JSONObject : JSONNode
 	{
 		private readonly Dictionary<string, JSONNode> _mDict = new Dictionary<string, JSONNode>();
@@ -1157,6 +1166,7 @@ namespace ChatCore.Utilities
 	}
 	// End of JSONObject
 
+	// ReSharper disable once InconsistentNaming
 	public partial class JSONString : JSONNode
 	{
 		private string _mData;
@@ -1216,6 +1226,7 @@ namespace ChatCore.Utilities
 	}
 	// End of JSONString
 
+	// ReSharper disable once InconsistentNaming
 	public partial class JSONNumber : JSONNode
 	{
 		private double _mData;
@@ -1311,6 +1322,7 @@ namespace ChatCore.Utilities
 	}
 	// End of JSONNumber
 
+	// ReSharper disable once InconsistentNaming
 	public partial class JSONBool : JSONNode
 	{
 		private bool _mData;
@@ -1374,6 +1386,7 @@ namespace ChatCore.Utilities
 	}
 	// End of JSONBool
 
+	// ReSharper disable once InconsistentNaming
 	public partial class JSONNull : JSONNode
 	{
 		private static readonly JSONNull MStaticInstance = new JSONNull();
@@ -1586,6 +1599,7 @@ namespace ChatCore.Utilities
 	}
 	// End of JSONLazyCreator
 
+	// ReSharper disable once InconsistentNaming
 	public static class JSON
 	{
 		public static JSONNode Parse(string aJson)

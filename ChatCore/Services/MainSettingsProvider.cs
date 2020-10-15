@@ -22,8 +22,10 @@ namespace ChatCore.Services
 
         [ConfigSection("Twitch")]
         [ConfigMeta(Comment = "When enabled, BetterTwitchTV emotes will be parsed.")]
+        // ReSharper disable once InconsistentNaming
         public bool ParseBTTVEmotes = true;
         [ConfigMeta(Comment = "When enabled, FrankerFaceZ emotes will be parsed.")]
+        // ReSharper disable once InconsistentNaming
         public bool ParseFFZEmotes = true;
         [ConfigMeta(Comment = "When enabled, Twitch emotes will be parsed.")]
         public bool ParseTwitchEmotes = true;
