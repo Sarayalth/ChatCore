@@ -66,7 +66,7 @@ namespace ChatCore
 	                .AddSingleton<IChatService>(x =>
 		                new ChatServiceMultiplexer(
 			                x.GetService<ILogger<ChatServiceMultiplexer>>(),
-			                new List<IChatService>()
+			                new List<IChatService>
 			                {
 				                x.GetService<TwitchService>()
 			                }

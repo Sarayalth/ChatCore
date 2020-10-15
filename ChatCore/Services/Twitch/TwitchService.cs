@@ -110,8 +110,8 @@ namespace ChatCore.Services.Twitch
 	            _isStarted = false;
 	            _channels.Clear();
 
-	            LoggedInUser = null!;
-	            _loggedInUsername = null!;
+	            LoggedInUser = null;
+	            _loggedInUsername = null;
 
 	            _websocketService.Disconnect();
             }
@@ -197,7 +197,7 @@ namespace ChatCore.Services.Twitch
                                 _channels[twitchMessage.Channel.Id] = twitchMessage.Channel;
                                 _dataProvider.TryRequestChannelResources(twitchMessage.Channel.AsTwitchChannel()!, resources =>
                                 {
-                                    ChannelResourceDataCached?.InvokeAll(assembly!, this, twitchMessage.Channel, resources);
+                                    ChannelResourceDataCached.InvokeAll(assembly!, this, twitchMessage.Channel, resources);
                                 });
                                 RoomStateUpdatedCallbacks?.InvokeAll(assembly!, this, twitchMessage.Channel, _logger);
                                 continue;

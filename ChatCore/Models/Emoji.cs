@@ -16,6 +16,7 @@ namespace ChatCore.Models
         public ImageRect UVs { get; internal set; }
 
         public Emoji() { }
+
         public Emoji(string json)
         {
             var obj = JSON.Parse(json);
@@ -28,6 +29,7 @@ namespace ChatCore.Models
             if (obj.TryGetKey(nameof(Type), out var type)) { Type = Enum.TryParse<EmoteType>(type.Value, out var typeEnum) ? typeEnum : EmoteType.SingleImage; }
             if (obj.TryGetKey(nameof(UVs), out var uvs)) { UVs = new ImageRect(uvs.Value); }
         }
+
         public JSONObject ToJson()
         {
             var obj = new JSONObject();
