@@ -67,96 +67,113 @@ namespace ChatCore.Utilities
         {
             private enum Type { None, Array, Object }
             private Type type;
-            private Dictionary<string, JSONNode>.Enumerator m_Object;
-            private List<JSONNode>.Enumerator m_Array;
-            public bool IsValid { get { return type != Type.None; } }
+            private Dictionary<string, JSONNode>.Enumerator _mObject;
+            private List<JSONNode>.Enumerator _mArray;
+            public bool IsValid => type != Type.None;
+
             public Enumerator(List<JSONNode>.Enumerator aArrayEnum)
             {
                 type = Type.Array;
-                m_Object = default(Dictionary<string, JSONNode>.Enumerator);
-                m_Array = aArrayEnum;
+                _mObject = default;
+                _mArray = aArrayEnum;
             }
             public Enumerator(Dictionary<string, JSONNode>.Enumerator aDictEnum)
             {
                 type = Type.Object;
-                m_Object = aDictEnum;
-                m_Array = default(List<JSONNode>.Enumerator);
+                _mObject = aDictEnum;
+                _mArray = default;
             }
             public KeyValuePair<string, JSONNode> Current
             {
                 get
                 {
                     if (type == Type.Array)
-                        return new KeyValuePair<string, JSONNode>(string.Empty, m_Array.Current);
-                    else if (type == Type.Object)
-                        return m_Object.Current;
-                    return new KeyValuePair<string, JSONNode>(string.Empty, null);
+                    {
+	                    return new KeyValuePair<string, JSONNode>(string.Empty, _mArray.Current);
+                    }
+
+                    if (type == Type.Object)
+                    {
+	                    return _mObject.Current;
+                    }
+
+                    return new KeyValuePair<string, JSONNode>(string.Empty, null!);
                 }
             }
             public bool MoveNext()
             {
                 if (type == Type.Array)
-                    return m_Array.MoveNext();
-                else if (type == Type.Object)
-                    return m_Object.MoveNext();
+                {
+	                return _mArray.MoveNext();
+                }
+
+                if (type == Type.Object)
+                {
+	                return _mObject.MoveNext();
+                }
+
                 return false;
             }
         }
         public struct ValueEnumerator
         {
-            private Enumerator m_Enumerator;
+            private Enumerator _mEnumerator;
             public ValueEnumerator(List<JSONNode>.Enumerator aArrayEnum) : this(new Enumerator(aArrayEnum)) { }
             public ValueEnumerator(Dictionary<string, JSONNode>.Enumerator aDictEnum) : this(new Enumerator(aDictEnum)) { }
-            public ValueEnumerator(Enumerator aEnumerator) { m_Enumerator = aEnumerator; }
-            public JSONNode Current { get { return m_Enumerator.Current.Value; } }
-            public bool MoveNext() { return m_Enumerator.MoveNext(); }
+            public ValueEnumerator(Enumerator aEnumerator) { _mEnumerator = aEnumerator; }
+            public JSONNode Current => _mEnumerator.Current.Value;
+            public bool MoveNext() { return _mEnumerator.MoveNext(); }
             public ValueEnumerator GetEnumerator() { return this; }
         }
         public struct KeyEnumerator
         {
-            private Enumerator m_Enumerator;
+            private Enumerator _mEnumerator;
             public KeyEnumerator(List<JSONNode>.Enumerator aArrayEnum) : this(new Enumerator(aArrayEnum)) { }
             public KeyEnumerator(Dictionary<string, JSONNode>.Enumerator aDictEnum) : this(new Enumerator(aDictEnum)) { }
-            public KeyEnumerator(Enumerator aEnumerator) { m_Enumerator = aEnumerator; }
-            public string Current { get { return m_Enumerator.Current.Key; } }
-            public bool MoveNext() { return m_Enumerator.MoveNext(); }
+            public KeyEnumerator(Enumerator aEnumerator) { _mEnumerator = aEnumerator; }
+            public string Current => _mEnumerator.Current.Key;
+            public bool MoveNext() { return _mEnumerator.MoveNext(); }
             public KeyEnumerator GetEnumerator() { return this; }
         }
 
         public class LinqEnumerator : IEnumerator<KeyValuePair<string, JSONNode>>, IEnumerable<KeyValuePair<string, JSONNode>>
         {
-            private JSONNode m_Node;
-            private Enumerator m_Enumerator;
+            private JSONNode _mNode;
+            private Enumerator _mEnumerator;
             internal LinqEnumerator(JSONNode aNode)
             {
-                m_Node = aNode;
-                if (m_Node != null)
-                    m_Enumerator = m_Node.GetEnumerator();
+                _mNode = aNode;
+                if (_mNode != null)
+                {
+	                _mEnumerator = _mNode.GetEnumerator();
+                }
             }
-            public KeyValuePair<string, JSONNode> Current { get { return m_Enumerator.Current; } }
-            object IEnumerator.Current { get { return m_Enumerator.Current; } }
-            public bool MoveNext() { return m_Enumerator.MoveNext(); }
+            public KeyValuePair<string, JSONNode> Current => _mEnumerator.Current;
+            object IEnumerator.Current => _mEnumerator.Current;
+            public bool MoveNext() { return _mEnumerator.MoveNext(); }
 
             public void Dispose()
             {
-                m_Node = null;
-                m_Enumerator = new Enumerator();
+                _mNode = null!;
+                _mEnumerator = new Enumerator();
             }
 
             public IEnumerator<KeyValuePair<string, JSONNode>> GetEnumerator()
             {
-                return new LinqEnumerator(m_Node);
+                return new LinqEnumerator(_mNode);
             }
 
             public void Reset()
             {
-                if (m_Node != null)
-                    m_Enumerator = m_Node.GetEnumerator();
+                if (_mNode != null)
+                {
+	                _mEnumerator = _mNode.GetEnumerator();
+                }
             }
 
             IEnumerator IEnumerable.GetEnumerator()
             {
-                return new LinqEnumerator(m_Node);
+                return new LinqEnumerator(_mNode);
             }
         }
 
@@ -170,22 +187,26 @@ namespace ChatCore.Utilities
 
         public abstract JSONNodeType Tag { get; }
 
-        public virtual JSONNode this[int aIndex] { get { return null; } set { } }
+        public virtual JSONNode this[int aIndex] { get => null!;
+	        set { } }
 
-        public virtual JSONNode this[string aKey] { get { return null; } set { } }
+        public virtual JSONNode this[string aKey] { get => null!;
+	        set { } }
 
-        public virtual string Value { get { return ""; } set { } }
+        public virtual string Value { get => "";
+	        set { } }
 
-        public virtual int Count { get { return 0; } }
+        public virtual int Count => 0;
 
-        public virtual bool IsNumber { get { return false; } }
-        public virtual bool IsString { get { return false; } }
-        public virtual bool IsBoolean { get { return false; } }
-        public virtual bool IsNull { get { return false; } }
-        public virtual bool IsArray { get { return false; } }
-        public virtual bool IsObject { get { return false; } }
+        public virtual bool IsNumber => false;
+        public virtual bool IsString => false;
+        public virtual bool IsBoolean => false;
+        public virtual bool IsNull => false;
+        public virtual bool IsArray => false;
+        public virtual bool IsObject => false;
 
-        public virtual bool Inline { get { return false; } set { } }
+        public virtual bool Inline { get => false;
+	        set { } }
 
         public virtual void Add(string aKey, JSONNode aItem)
         {
@@ -197,12 +218,12 @@ namespace ChatCore.Utilities
 
         public virtual JSONNode Remove(string aKey)
         {
-            return null;
+            return null!;
         }
 
         public virtual JSONNode Remove(int aIndex)
         {
-            return null;
+            return null!;
         }
 
         public virtual JSONNode Remove(JSONNode aNode)
@@ -212,7 +233,7 @@ namespace ChatCore.Utilities
 
         public virtual JSONNode Clone()
         {
-            return null;
+            return null!;
         }
 
         public virtual IEnumerable<JSONNode> Children
@@ -227,15 +248,19 @@ namespace ChatCore.Utilities
         {
             get
             {
-                foreach (var C in Children)
-                    foreach (var D in C.DeepChildren)
-                        yield return D;
+                foreach (var c in Children)
+                {
+	                foreach (var dc in c.DeepChildren)
+	                {
+		                yield return dc;
+	                }
+                }
             }
         }
 
         public virtual bool TryGetKey(string aKey, out JSONNode node)
         {
-            node = null;
+            node = null!;
             return false;
         }
 
@@ -265,9 +290,9 @@ namespace ChatCore.Utilities
         internal abstract void WriteToStringBuilder(StringBuilder aSB, int aIndent, int aIndentInc, JSONTextMode aMode);
 
         public abstract Enumerator GetEnumerator();
-        public IEnumerable<KeyValuePair<string, JSONNode>> Linq { get { return new LinqEnumerator(this); } }
-        public KeyEnumerator Keys { get { return new KeyEnumerator(GetEnumerator()); } }
-        public ValueEnumerator Values { get { return new ValueEnumerator(GetEnumerator()); } }
+        public IEnumerable<KeyValuePair<string, JSONNode>> Linq => new LinqEnumerator(this);
+        public KeyEnumerator Keys => new KeyEnumerator(GetEnumerator());
+        public ValueEnumerator Values => new ValueEnumerator(GetEnumerator());
 
         #endregion common interface
 
@@ -276,29 +301,20 @@ namespace ChatCore.Utilities
 
         public virtual double AsDouble
         {
-            get
-            {
-                var v = 0.0;
-                if (double.TryParse(Value, NumberStyles.Float, CultureInfo.InvariantCulture, out v))
-                    return v;
-                return 0.0;
-            }
-            set
-            {
-                Value = value.ToString(CultureInfo.InvariantCulture);
-            }
+            get => double.TryParse(Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : 0.0;
+            set => Value = value.ToString(CultureInfo.InvariantCulture);
         }
 
         public virtual int AsInt
         {
-            get { return (int)AsDouble; }
-            set { AsDouble = value; }
+            get => (int)AsDouble;
+            set => AsDouble = value;
         }
 
         public virtual float AsFloat
         {
-            get { return (float)AsDouble; }
-            set { AsDouble = value; }
+            get => (float)AsDouble;
+            set => AsDouble = value;
         }
 
         public virtual bool AsBool
@@ -307,13 +323,13 @@ namespace ChatCore.Utilities
             {
                 var v = false;
                 if (bool.TryParse(Value, out v))
-                    return v;
+                {
+	                return v;
+                }
+
                 return !string.IsNullOrEmpty(Value);
             }
-            set
-            {
-                Value = (value) ? "true" : "false";
-            }
+            set => Value = (value) ? "true" : "false";
         }
 
         public virtual long AsLong
@@ -322,31 +338,18 @@ namespace ChatCore.Utilities
             {
                 long val = 0;
                 if (long.TryParse(Value, out val))
-                    return val;
+                {
+	                return val;
+                }
+
                 return 0L;
             }
-            set
-            {
-                Value = value.ToString();
-            }
+            set => Value = value.ToString();
         }
 
-        public virtual JSONArray AsArray
-        {
-            get
-            {
-                return this as JSONArray;
-            }
-        }
+        public virtual JSONArray AsArray => this as JSONArray;
 
-        public virtual JSONObject AsObject
-        {
-            get
-            {
-                return this as JSONObject;
-            }
-        }
-
+        public virtual JSONObject AsObject => this as JSONObject;
 
         #endregion typecasting properties
 
@@ -391,7 +394,10 @@ namespace ChatCore.Utilities
         public static implicit operator JSONNode(long n)
         {
             if (longAsString)
-                return new JSONString(n.ToString());
+            {
+	            return new JSONString(n.ToString());
+            }
+
             return new JSONNumber(n);
         }
         public static implicit operator long(JSONNode d)
@@ -416,11 +422,17 @@ namespace ChatCore.Utilities
         public static bool operator ==(JSONNode a, object b)
         {
             if (ReferenceEquals(a, b))
-                return true;
+            {
+	            return true;
+            }
+
             var aIsNull = a is JSONNull || ReferenceEquals(a, null) || a is JSONLazyCreator;
             var bIsNull = b is JSONNull || ReferenceEquals(b, null) || b is JSONLazyCreator;
             if (aIsNull && bIsNull)
-                return true;
+            {
+	            return true;
+            }
+
             return !aIsNull && a.Equals(b);
         }
 
@@ -448,7 +460,10 @@ namespace ChatCore.Utilities
             get
             {
                 if (m_EscapeBuilder == null)
-                    m_EscapeBuilder = new StringBuilder();
+                {
+	                m_EscapeBuilder = new StringBuilder();
+                }
+
                 return m_EscapeBuilder;
             }
         }
@@ -461,7 +476,10 @@ namespace ChatCore.Utilities
             var sb = EscapeBuilder;
             sb.Length = 0;
             if (sb.Capacity < aText.Length + aText.Length / 10)
-                sb.Capacity = aText.Length + aText.Length / 10;
+            {
+	            sb.Capacity = aText.Length + aText.Length / 10;
+            }
+
             foreach (var c in aText)
             {
                 switch (c)
@@ -494,7 +512,10 @@ namespace ChatCore.Utilities
                             sb.Append("\\u").Append(val.ToString("X4"));
                         }
                         else
-                            sb.Append(c);
+                        {
+	                        sb.Append(c);
+                        }
+
                         break;
                 }
             }
@@ -506,23 +527,36 @@ namespace ChatCore.Utilities
         private static JSONNode ParseElement(string token, bool quoted)
         {
             if (quoted)
-                return token;
+            {
+	            return token;
+            }
+
             var tmp = token.ToLower();
             if (tmp == "false" || tmp == "true")
-                return tmp == "true";
+            {
+	            return tmp == "true";
+            }
+
             if (tmp == "null")
-                return JSONNull.CreateOrGet();
+            {
+	            return JSONNull.CreateOrGet();
+            }
+
             double val;
             if (double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out val))
-                return val;
+            {
+	            return val;
+            }
             else
-                return token;
+            {
+	            return token;
+            }
         }
 
         public static JSONNode Parse(string aJSON)
         {
             var stack = new Stack<JSONNode>();
-            JSONNode ctx = null;
+            JSONNode ctx = null!;
             var i = 0;
             var Token = new StringBuilder();
             var TokenName = "";
@@ -574,16 +608,24 @@ namespace ChatCore.Utilities
                             break;
                         }
                         if (stack.Count == 0)
-                            throw new Exception("JSON Parse: Too many closing brackets");
+                        {
+	                        throw new Exception("JSON Parse: Too many closing brackets");
+                        }
 
                         stack.Pop();
                         if (Token.Length > 0 || TokenIsQuoted)
-                            ctx.Add(TokenName, ParseElement(Token.ToString(), TokenIsQuoted));
+                        {
+	                        ctx.Add(TokenName, ParseElement(Token.ToString(), TokenIsQuoted));
+                        }
+
                         TokenIsQuoted = false;
                         TokenName = "";
                         Token.Length = 0;
                         if (stack.Count > 0)
-                            ctx = stack.Peek();
+                        {
+	                        ctx = stack.Peek();
+                        }
+
                         break;
 
                     case ':':
@@ -609,8 +651,10 @@ namespace ChatCore.Utilities
                             break;
                         }
                         if (Token.Length > 0 || TokenIsQuoted)
-                            ctx.Add(TokenName, ParseElement(Token.ToString(), TokenIsQuoted));
-                        TokenIsQuoted = false;
+                        {
+	                        ctx.Add(TokenName, ParseElement(Token.ToString(), TokenIsQuoted));
+                        }
+
                         TokenName = "";
                         Token.Length = 0;
                         TokenIsQuoted = false;
@@ -623,7 +667,10 @@ namespace ChatCore.Utilities
                     case ' ':
                     case '\t':
                         if (QuoteMode)
-                            Token.Append(aJSON[i]);
+                        {
+	                        Token.Append(aJSON[i]);
+                        }
+
                         break;
 
                     case '\\':
@@ -666,7 +713,11 @@ namespace ChatCore.Utilities
                     case '/':
                         if (allowLineComments && !QuoteMode && i + 1 < aJSON.Length && aJSON[i + 1] == '/')
                         {
-                            while (++i < aJSON.Length && aJSON[i] != '\n' && aJSON[i] != '\r') ;
+                            while (++i < aJSON.Length && aJSON[i] != '\n' && aJSON[i] != '\r')
+                            {
+	                            ;
+                            }
+
                             break;
                         }
                         Token.Append(aJSON[i]);
@@ -680,12 +731,17 @@ namespace ChatCore.Utilities
                 }
                 ++i;
             }
+
             if (QuoteMode)
             {
                 throw new Exception("JSON Parse: Quotation marks seems to be messed up.");
             }
+
             if (ctx == null)
-                return ParseElement(Token.ToString(), TokenIsQuoted);
+            {
+	            return ParseElement(Token.ToString(), TokenIsQuoted);
+            }
+
             return ctx;
         }
 
@@ -694,85 +750,104 @@ namespace ChatCore.Utilities
 
     public partial class JSONArray : JSONNode
     {
-        private List<JSONNode> m_List = new List<JSONNode>();
-        private bool inline = false;
+        private readonly List<JSONNode> _mList = new List<JSONNode>();
+        private bool _inline;
         public override bool Inline
         {
-            get { return inline; }
-            set { inline = value; }
+            get => _inline;
+            set => _inline = value;
         }
 
-        public override JSONNodeType Tag { get { return JSONNodeType.Array; } }
-        public override bool IsArray { get { return true; } }
-        public override Enumerator GetEnumerator() { return new Enumerator(m_List.GetEnumerator()); }
+        public override JSONNodeType Tag => JSONNodeType.Array;
+        public override bool IsArray => true;
+        public override Enumerator GetEnumerator() { return new Enumerator(_mList.GetEnumerator()); }
 
         public override JSONNode this[int aIndex]
         {
             get
             {
-                if (aIndex < 0 || aIndex >= m_List.Count)
-                    return new JSONLazyCreator(this);
-                return m_List[aIndex];
+                if (aIndex < 0 || aIndex >= _mList.Count)
+                {
+	                return new JSONLazyCreator(this);
+                }
+
+                return _mList[aIndex];
             }
             set
             {
                 if (value == null)
-                    value = JSONNull.CreateOrGet();
-                if (aIndex < 0 || aIndex >= m_List.Count)
-                    m_List.Add(value);
+                {
+	                value = JSONNull.CreateOrGet();
+                }
+
+                if (aIndex < 0 || aIndex >= _mList.Count)
+                {
+	                _mList.Add(value);
+                }
                 else
-                    m_List[aIndex] = value;
+                {
+	                _mList[aIndex] = value;
+                }
             }
         }
 
         public override JSONNode this[string aKey]
         {
-            get { return new JSONLazyCreator(this); }
+            get => new JSONLazyCreator(this);
             set
             {
                 if (value == null)
-                    value = JSONNull.CreateOrGet();
-                m_List.Add(value);
+                {
+	                value = JSONNull.CreateOrGet();
+                }
+
+                _mList.Add(value);
             }
         }
 
-        public override int Count
-        {
-            get { return m_List.Count; }
-        }
+        public override int Count => _mList.Count;
 
         public override void Add(string aKey, JSONNode aItem)
         {
             if (aItem == null)
-                aItem = JSONNull.CreateOrGet();
-            m_List.Add(aItem);
+            {
+	            aItem = JSONNull.CreateOrGet();
+            }
+
+            _mList.Add(aItem);
         }
 
         public override JSONNode Remove(int aIndex)
         {
-            if (aIndex < 0 || aIndex >= m_List.Count)
-                return null;
-            var tmp = m_List[aIndex];
-            m_List.RemoveAt(aIndex);
+            if (aIndex < 0 || aIndex >= _mList.Count)
+            {
+	            return null!;
+            }
+
+            var tmp = _mList[aIndex];
+            _mList.RemoveAt(aIndex);
             return tmp;
         }
 
         public override JSONNode Remove(JSONNode aNode)
         {
-            m_List.Remove(aNode);
+            _mList.Remove(aNode);
             return aNode;
         }
 
         public override JSONNode Clone()
         {
-            var node = new JSONArray();
-            node.m_List.Capacity = m_List.Capacity;
-            foreach (var n in m_List)
+	        var node = new JSONArray {_mList = {Capacity = _mList.Capacity}};
+	        foreach (var n in _mList)
             {
                 if (n != null)
-                    node.Add(n.Clone());
+                {
+	                node.Add(n.Clone());
+                }
                 else
-                    node.Add(null);
+                {
+	                node.Add(null);
+                }
             }
             return node;
         }
@@ -781,39 +856,49 @@ namespace ChatCore.Utilities
         {
             get
             {
-                foreach (var N in m_List)
-                    yield return N;
+                foreach (var N in _mList)
+                {
+	                yield return N;
+                }
             }
         }
 
-        public IReadOnlyList<JSONNode> List
-        {
-            get
-            {
-                return m_List;
-            }
-        }
+        public IReadOnlyList<JSONNode> List => _mList;
 
 
         internal override void WriteToStringBuilder(StringBuilder aSB, int aIndent, int aIndentInc, JSONTextMode aMode)
         {
             aSB.Append('[');
-            var count = m_List.Count;
-            if (inline)
-                aMode = JSONTextMode.Compact;
+            var count = _mList.Count;
+            if (_inline)
+            {
+	            aMode = JSONTextMode.Compact;
+            }
+
             for (var i = 0; i < count; i++)
             {
                 if (i > 0)
-                    aSB.Append(',');
-                if (aMode == JSONTextMode.Indent)
-                    aSB.AppendLine();
+                {
+	                aSB.Append(',');
+                }
 
                 if (aMode == JSONTextMode.Indent)
-                    aSB.Append(' ', aIndent + aIndentInc);
-                m_List[i].WriteToStringBuilder(aSB, aIndent + aIndentInc, aIndentInc, aMode);
+                {
+	                aSB.AppendLine();
+                }
+
+                if (aMode == JSONTextMode.Indent)
+                {
+	                aSB.Append(' ', aIndent + aIndentInc);
+                }
+
+                _mList[i].WriteToStringBuilder(aSB, aIndent + aIndentInc, aIndentInc, aMode);
             }
             if (aMode == JSONTextMode.Indent)
-                aSB.AppendLine().Append(' ', aIndent);
+            {
+	            aSB.AppendLine().Append(' ', aIndent);
+            }
+
             aSB.Append(']');
         }
 
@@ -831,38 +916,47 @@ namespace ChatCore.Utilities
 
     public partial class JSONObject : JSONNode
     {
-        private Dictionary<string, JSONNode> m_Dict = new Dictionary<string, JSONNode>();
+        private readonly Dictionary<string, JSONNode> _mDict = new Dictionary<string, JSONNode>();
 
-        private bool inline = false;
+        private bool _inline;
         public override bool Inline
         {
-            get { return inline; }
-            set { inline = value; }
+            get => _inline;
+            set => _inline = value;
         }
 
-        public override JSONNodeType Tag { get { return JSONNodeType.Object; } }
-        public override bool IsObject { get { return true; } }
+        public override JSONNodeType Tag => JSONNodeType.Object;
+        public override bool IsObject => true;
 
-        public override Enumerator GetEnumerator() { return new Enumerator(m_Dict.GetEnumerator()); }
+        public override Enumerator GetEnumerator() { return new Enumerator(_mDict.GetEnumerator()); }
 
 
         public override JSONNode this[string aKey]
         {
             get
             {
-                if (m_Dict.ContainsKey(aKey))
-                    return m_Dict[aKey];
-                else
-                    return new JSONLazyCreator(this, aKey);
+	            if (_mDict.ContainsKey(aKey))
+                {
+	                return _mDict[aKey];
+                }
+
+	            return new JSONLazyCreator(this, aKey);
             }
             set
             {
                 if (value == null)
-                    value = JSONNull.CreateOrGet();
-                if (m_Dict.ContainsKey(aKey))
-                    m_Dict[aKey] = value;
+                {
+	                value = JSONNull.CreateOrGet();
+                }
+
+                if (_mDict.ContainsKey(aKey))
+                {
+	                _mDict[aKey] = value;
+                }
                 else
-                    m_Dict.Add(aKey, value);
+                {
+	                _mDict.Add(aKey, value);
+                }
             }
         }
 
@@ -870,57 +964,77 @@ namespace ChatCore.Utilities
         {
             get
             {
-                if (aIndex < 0 || aIndex >= m_Dict.Count)
-                    return null;
-                return m_Dict.ElementAt(aIndex).Value;
+                if (aIndex < 0 || aIndex >= _mDict.Count)
+                {
+	                return null!;
+                }
+
+                return _mDict.ElementAt(aIndex).Value;
             }
             set
             {
                 if (value == null)
-                    value = JSONNull.CreateOrGet();
-                if (aIndex < 0 || aIndex >= m_Dict.Count)
-                    return;
-                var key = m_Dict.ElementAt(aIndex).Key;
-                m_Dict[key] = value;
+                {
+	                value = JSONNull.CreateOrGet();
+                }
+
+                if (aIndex < 0 || aIndex >= _mDict.Count)
+                {
+	                return;
+                }
+
+                var key = _mDict.ElementAt(aIndex).Key;
+                _mDict[key] = value;
             }
         }
 
-        public override int Count
-        {
-            get { return m_Dict.Count; }
-        }
+        public override int Count => _mDict.Count;
 
         public override void Add(string aKey, JSONNode aItem)
         {
             if (aItem == null)
-                aItem = JSONNull.CreateOrGet();
+            {
+	            aItem = JSONNull.CreateOrGet();
+            }
 
             if (aKey != null)
             {
-                if (m_Dict.ContainsKey(aKey))
-                    m_Dict[aKey] = aItem;
+                if (_mDict.ContainsKey(aKey))
+                {
+	                _mDict[aKey] = aItem;
+                }
                 else
-                    m_Dict.Add(aKey, aItem);
+                {
+	                _mDict.Add(aKey, aItem);
+                }
             }
             else
-                m_Dict.Add(Guid.NewGuid().ToString(), aItem);
+            {
+	            _mDict.Add(Guid.NewGuid().ToString(), aItem);
+            }
         }
 
         public override JSONNode Remove(string aKey)
         {
-            if (!m_Dict.ContainsKey(aKey))
-                return null;
-            var tmp = m_Dict[aKey];
-            m_Dict.Remove(aKey);
+            if (!_mDict.ContainsKey(aKey))
+            {
+	            return null!;
+            }
+
+            var tmp = _mDict[aKey];
+            _mDict.Remove(aKey);
             return tmp;
         }
 
         public override JSONNode Remove(int aIndex)
         {
-            if (aIndex < 0 || aIndex >= m_Dict.Count)
-                return null;
-            var item = m_Dict.ElementAt(aIndex);
-            m_Dict.Remove(item.Key);
+            if (aIndex < 0 || aIndex >= _mDict.Count)
+            {
+	            return null!;
+            }
+
+            var item = _mDict.ElementAt(aIndex);
+            _mDict.Remove(item.Key);
             return item.Value;
         }
 
@@ -928,8 +1042,8 @@ namespace ChatCore.Utilities
         {
             try
             {
-                var item = m_Dict.Where(k => k.Value == aNode).First();
-                m_Dict.Remove(item.Key);
+                var item = _mDict.Where(k => k.Value == aNode).First();
+                _mDict.Remove(item.Key);
                 return aNode;
             }
             catch
@@ -941,7 +1055,7 @@ namespace ChatCore.Utilities
         public override JSONNode Clone()
         {
             var node = new JSONObject();
-            foreach (var n in m_Dict)
+            foreach (var n in _mDict)
             {
                 node.Add(n.Key, n.Value.Clone());
             }
@@ -950,20 +1064,23 @@ namespace ChatCore.Utilities
 
         public override bool HasKey(string aKey)
         {
-            return m_Dict.ContainsKey(aKey);
+            return _mDict.ContainsKey(aKey);
         }
 
         public override bool TryGetKey(string aKey, out JSONNode node)
         {
-            return m_Dict.TryGetValue(aKey, out node);
+            return _mDict.TryGetValue(aKey, out node);
         }
 
 
         public override JSONNode GetValueOrDefault(string aKey, JSONNode aDefault)
         {
             JSONNode res;
-            if (m_Dict.TryGetValue(aKey, out res))
-                return res;
+            if (_mDict.TryGetValue(aKey, out res))
+            {
+	            return res;
+            }
+
             return aDefault;
         }
 
@@ -971,8 +1088,10 @@ namespace ChatCore.Utilities
         {
             get
             {
-                foreach (var N in m_Dict)
-                    yield return N.Value;
+                foreach (var N in _mDict)
+                {
+	                yield return N.Value;
+                }
             }
         }
 
@@ -980,26 +1099,46 @@ namespace ChatCore.Utilities
         {
             aSB.Append('{');
             var first = true;
-            if (inline)
-                aMode = JSONTextMode.Compact;
-            foreach (var k in m_Dict)
+            if (_inline)
+            {
+	            aMode = JSONTextMode.Compact;
+            }
+
+            foreach (var k in _mDict)
             {
                 if (!first)
-                    aSB.Append(',');
+                {
+	                aSB.Append(',');
+                }
+
                 first = false;
                 if (aMode == JSONTextMode.Indent)
-                    aSB.AppendLine();
+                {
+	                aSB.AppendLine();
+                }
+
                 if (aMode == JSONTextMode.Indent)
-                    aSB.Append(' ', aIndent + aIndentInc);
+                {
+	                aSB.Append(' ', aIndent + aIndentInc);
+                }
+
                 aSB.Append('\"').Append(Escape(k.Key)).Append('\"');
                 if (aMode == JSONTextMode.Compact)
-                    aSB.Append(':');
+                {
+	                aSB.Append(':');
+                }
                 else
-                    aSB.Append(" : ");
+                {
+	                aSB.Append(" : ");
+                }
+
                 k.Value.WriteToStringBuilder(aSB, aIndent + aIndentInc, aIndentInc, aMode);
             }
             if (aMode == JSONTextMode.Indent)
-                aSB.AppendLine().Append(' ', aIndent);
+            {
+	            aSB.AppendLine().Append(' ', aIndent);
+            }
+
             aSB.Append('}');
         }
 
@@ -1010,19 +1149,16 @@ namespace ChatCore.Utilities
     {
         private string m_Data;
 
-        public override JSONNodeType Tag { get { return JSONNodeType.String; } }
-        public override bool IsString { get { return true; } }
+        public override JSONNodeType Tag => JSONNodeType.String;
+        public override bool IsString => true;
 
         public override Enumerator GetEnumerator() { return new Enumerator(); }
 
 
         public override string Value
         {
-            get { return m_Data; }
-            set
-            {
-                m_Data = value;
-            }
+            get => m_Data;
+            set => m_Data = value;
         }
 
         public JSONString(string aData)
@@ -1041,13 +1177,22 @@ namespace ChatCore.Utilities
         public override bool Equals(object obj)
         {
             if (base.Equals(obj))
-                return true;
+            {
+	            return true;
+            }
+
             var s = obj as string;
             if (s != null)
-                return m_Data == s;
+            {
+	            return m_Data == s;
+            }
+
             var s2 = obj as JSONString;
             if (s2 != null)
-                return m_Data == s2.m_Data;
+            {
+	            return m_Data == s2.m_Data;
+            }
+
             return false;
         }
         public override int GetHashCode()
@@ -1061,30 +1206,32 @@ namespace ChatCore.Utilities
     {
         private double m_Data;
 
-        public override JSONNodeType Tag { get { return JSONNodeType.Number; } }
-        public override bool IsNumber { get { return true; } }
+        public override JSONNodeType Tag => JSONNodeType.Number;
+        public override bool IsNumber => true;
         public override Enumerator GetEnumerator() { return new Enumerator(); }
 
         public override string Value
         {
-            get { return m_Data.ToString(CultureInfo.InvariantCulture); }
+            get => m_Data.ToString(CultureInfo.InvariantCulture);
             set
             {
                 double v;
                 if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out v))
-                    m_Data = v;
+                {
+	                m_Data = v;
+                }
             }
         }
 
         public override double AsDouble
         {
-            get { return m_Data; }
-            set { m_Data = value; }
+            get => m_Data;
+            set => m_Data = value;
         }
         public override long AsLong
         {
-            get { return (long)m_Data; }
-            set { m_Data = value; }
+            get => (long)m_Data;
+            set => m_Data = value;
         }
 
         public JSONNumber(double aData)
@@ -1118,14 +1265,26 @@ namespace ChatCore.Utilities
         public override bool Equals(object obj)
         {
             if (obj == null)
-                return false;
+            {
+	            return false;
+            }
+
             if (base.Equals(obj))
-                return true;
+            {
+	            return true;
+            }
+
             var s2 = obj as JSONNumber;
             if (s2 != null)
-                return m_Data == s2.m_Data;
+            {
+	            return m_Data == s2.m_Data;
+            }
+
             if (IsNumeric(obj))
-                return Convert.ToDouble(obj) == m_Data;
+            {
+	            return Convert.ToDouble(obj) == m_Data;
+            }
+
             return false;
         }
         public override int GetHashCode()
@@ -1139,24 +1298,26 @@ namespace ChatCore.Utilities
     {
         private bool m_Data;
 
-        public override JSONNodeType Tag { get { return JSONNodeType.Boolean; } }
-        public override bool IsBoolean { get { return true; } }
+        public override JSONNodeType Tag => JSONNodeType.Boolean;
+        public override bool IsBoolean => true;
         public override Enumerator GetEnumerator() { return new Enumerator(); }
 
         public override string Value
         {
-            get { return m_Data.ToString(); }
+            get => m_Data.ToString();
             set
             {
                 bool v;
                 if (bool.TryParse(value, out v))
-                    m_Data = v;
+                {
+	                m_Data = v;
+                }
             }
         }
         public override bool AsBool
         {
-            get { return m_Data; }
-            set { m_Data = value; }
+            get => m_Data;
+            set => m_Data = value;
         }
 
         public JSONBool(bool aData)
@@ -1181,9 +1342,15 @@ namespace ChatCore.Utilities
         public override bool Equals(object obj)
         {
             if (obj == null)
-                return false;
+            {
+	            return false;
+            }
+
             if (obj is bool)
-                return m_Data == (bool)obj;
+            {
+	            return m_Data == (bool)obj;
+            }
+
             return false;
         }
         public override int GetHashCode()
@@ -1200,23 +1367,26 @@ namespace ChatCore.Utilities
         public static JSONNull CreateOrGet()
         {
             if (reuseSameInstance)
-                return m_StaticInstance;
+            {
+	            return m_StaticInstance;
+            }
+
             return new JSONNull();
         }
         private JSONNull() { }
 
-        public override JSONNodeType Tag { get { return JSONNodeType.NullValue; } }
-        public override bool IsNull { get { return true; } }
+        public override JSONNodeType Tag => JSONNodeType.NullValue;
+        public override bool IsNull => true;
         public override Enumerator GetEnumerator() { return new Enumerator(); }
 
         public override string Value
         {
-            get { return "null"; }
+            get => "null";
             set { }
         }
         public override bool AsBool
         {
-            get { return false; }
+            get => false;
             set { }
         }
 
@@ -1228,7 +1398,10 @@ namespace ChatCore.Utilities
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(this, obj))
-                return true;
+            {
+	            return true;
+            }
+
             return (obj is JSONNull);
         }
         public override int GetHashCode()
@@ -1247,7 +1420,7 @@ namespace ChatCore.Utilities
     {
         private JSONNode m_Node = null;
         private string m_Key = null;
-        public override JSONNodeType Tag { get { return JSONNodeType.None; } }
+        public override JSONNodeType Tag => JSONNodeType.None;
         public override Enumerator GetEnumerator() { return new Enumerator(); }
 
         public JSONLazyCreator(JSONNode aNode)
@@ -1265,23 +1438,28 @@ namespace ChatCore.Utilities
         private T Set<T>(T aVal) where T : JSONNode
         {
             if (m_Key == null)
-                m_Node.Add(aVal);
+            {
+	            m_Node.Add(aVal);
+            }
             else
-                m_Node.Add(m_Key, aVal);
+            {
+	            m_Node.Add(m_Key, aVal);
+            }
+
             m_Node = null; // Be GC friendly.
             return aVal;
         }
 
         public override JSONNode this[int aIndex]
         {
-            get { return new JSONLazyCreator(this); }
-            set { Set(new JSONArray()).Add(value); }
+            get => new JSONLazyCreator(this);
+            set => Set(new JSONArray()).Add(value);
         }
 
         public override JSONNode this[string aKey]
         {
-            get { return new JSONLazyCreator(this, aKey); }
-            set { Set(new JSONObject()).Add(aKey, value); }
+            get => new JSONLazyCreator(this, aKey);
+            set => Set(new JSONObject()).Add(aKey, value);
         }
 
         public override void Add(JSONNode aItem)
@@ -1297,7 +1475,10 @@ namespace ChatCore.Utilities
         public static bool operator ==(JSONLazyCreator a, object b)
         {
             if (b == null)
-                return true;
+            {
+	            return true;
+            }
+
             return ReferenceEquals(a, b);
         }
 
@@ -1309,7 +1490,10 @@ namespace ChatCore.Utilities
         public override bool Equals(object obj)
         {
             if (obj == null)
-                return true;
+            {
+	            return true;
+            }
+
             return ReferenceEquals(this, obj);
         }
 
@@ -1321,19 +1505,19 @@ namespace ChatCore.Utilities
         public override int AsInt
         {
             get { Set(new JSONNumber(0)); return 0; }
-            set { Set(new JSONNumber(value)); }
+            set => Set(new JSONNumber(value));
         }
 
         public override float AsFloat
         {
             get { Set(new JSONNumber(0.0f)); return 0.0f; }
-            set { Set(new JSONNumber(value)); }
+            set => Set(new JSONNumber(value));
         }
 
         public override double AsDouble
         {
             get { Set(new JSONNumber(0.0)); return 0.0; }
-            set { Set(new JSONNumber(value)); }
+            set => Set(new JSONNumber(value));
         }
 
         public override long AsLong
@@ -1341,35 +1525,39 @@ namespace ChatCore.Utilities
             get
             {
                 if (longAsString)
-                    Set(new JSONString("0"));
+                {
+	                Set(new JSONString("0"));
+                }
                 else
-                    Set(new JSONNumber(0.0));
+                {
+	                Set(new JSONNumber(0.0));
+                }
+
                 return 0L;
             }
             set
             {
                 if (longAsString)
-                    Set(new JSONString(value.ToString()));
+                {
+	                Set(new JSONString(value.ToString()));
+                }
                 else
-                    Set(new JSONNumber(value));
+                {
+	                Set(new JSONNumber(value));
+                }
             }
         }
 
         public override bool AsBool
         {
             get { Set(new JSONBool(false)); return false; }
-            set { Set(new JSONBool(value)); }
+            set => Set(new JSONBool(value));
         }
 
-        public override JSONArray AsArray
-        {
-            get { return Set(new JSONArray()); }
-        }
+        public override JSONArray AsArray => Set(new JSONArray());
 
-        public override JSONObject AsObject
-        {
-            get { return Set(new JSONObject()); }
-        }
+        public override JSONObject AsObject => Set(new JSONObject());
+
         internal override void WriteToStringBuilder(StringBuilder aSB, int aIndent, int aIndentInc, JSONTextMode aMode)
         {
             aSB.Append("null");
@@ -1379,9 +1567,9 @@ namespace ChatCore.Utilities
 
     public static class JSON
     {
-        public static JSONNode Parse(string aJSON)
+        public static JSONNode Parse(string aJson)
         {
-            return JSONNode.Parse(aJSON);
+            return JSONNode.Parse(aJson);
         }
     }
 }

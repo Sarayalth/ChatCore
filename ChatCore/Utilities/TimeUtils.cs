@@ -2,11 +2,11 @@
 
 namespace ChatCore.Utilities
 {
-    public static class TimeUtils
-    {
-        public static string ToShortString(this TimeSpan span)
-        {
-            return string.Format("{0:00}:{1:00}:{2:00}", Math.Floor(span.TotalHours), span.Minutes, span.Seconds);
-        }
-    }
+	public static class TimeUtils
+	{
+		public static string ToShortString(this TimeSpan span)
+		{
+			return $"{Math.Floor(span.TotalHours):00}:{span.Minutes:00}:{span.Seconds:00}";
+		}
+	}
 }
