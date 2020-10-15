@@ -15,9 +15,14 @@ namespace ChatCore.Services
     /// </summary>
     public class ChatServiceMultiplexer : ChatServiceBase, IChatService
     {
-        public string DisplayName { get; private set; } = "Generic";
+	    private readonly ILogger _logger;
+	    private readonly IList<IChatService> _streamingServices;
+	    private readonly TwitchService _twitchService;
+	    private readonly object _invokeLock = new object();
 
-        public ChatServiceMultiplexer(ILogger<ChatServiceMultiplexer> logger, IList<IChatService> streamingServices)
+	    public string DisplayName { get; private set; } = "Generic";
+
+	    public ChatServiceMultiplexer(ILogger<ChatServiceMultiplexer> logger, IList<IChatService> streamingServices)
         {
             _logger = logger;
             _streamingServices = streamingServices;
@@ -43,11 +48,6 @@ namespace ChatCore.Services
             }
             DisplayName = sb.ToString();
         }
-
-        private ILogger _logger;
-        private IList<IChatService> _streamingServices;
-        private TwitchService _twitchService;
-        private object _invokeLock = new object();
 
         private void Service_OnChannelResourceDataCached(IChatService svc, IChatChannel channel, Dictionary<string, IChatResourceData> resources)
         {

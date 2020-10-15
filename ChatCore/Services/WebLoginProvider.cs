@@ -14,6 +14,16 @@ namespace ChatCore.Services
 {
     public class WebLoginProvider : IWebLoginProvider
     {
+	    private readonly ILogger _logger;
+	    private readonly IUserAuthProvider _authManager;
+	    private readonly MainSettingsProvider _settings;
+
+	    private HttpListener? _listener;
+	    private CancellationTokenSource? _cancellationToken;
+	    private static string? _pageData;
+
+	    private readonly SemaphoreSlim _requestLock = new SemaphoreSlim(1, 1);
+
 	    public WebLoginProvider(ILogger<WebLoginProvider> logger, IUserAuthProvider authManager, MainSettingsProvider settings)
         {
             _logger = logger;
@@ -21,41 +31,36 @@ namespace ChatCore.Services
             _settings = settings;
         }
 
-        private ILogger _logger;
-        private IUserAuthProvider _authManager;
-        private MainSettingsProvider _settings;
-        private HttpListener _listener;
-        private CancellationTokenSource _cancellationToken;
-        private static string pageData;
-        private SemaphoreSlim _requestLock = new SemaphoreSlim(1, 1);
-
 	    public void Start()
         {
-            if (pageData == null)
-            {
-                using (var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ChatCore.Resources.Web.index.html")))
+            if (_pageData == null)
                 {
-                    pageData = reader.ReadToEnd();
+	            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ChatCore.Resources.Web.index.html")!);
+	            _pageData = reader.ReadToEnd();
 	            //_logger.LogInformation($"PageData: {pageData}");
             }
-            }
-            if (_listener == null)
+
+            if (_listener != null)
             {
+	            return;
+            }
+
             _cancellationToken = new CancellationTokenSource();
             _listener = new HttpListener();
             _listener.Prefixes.Add($"http://localhost:{_settings.WebAppPort}/");
-                Task.Run(async () =>
+            Task.Run(() =>
             {
 	            _listener.Start();
 	            _listener.BeginGetContext(OnContext, null);
             });
         }
-        }
 
         private async void OnContext(IAsyncResult res)
         {
-            var ctx = _listener.EndGetContext(res);
+            var ctx = _listener!.EndGetContext(res);
             _listener.BeginGetContext(OnContext, null);
+
+            _logger.LogWarning("Request received");
 
             await _requestLock.WaitAsync();
             try
@@ -117,7 +122,8 @@ namespace ChatCore.Services
                     resp.Close();
                     return;
                 }
-                var pageBuilder = new StringBuilder(pageData);
+
+                var pageBuilder = new StringBuilder(_pageData);
                 var twitchChannelHtmlString = new StringBuilder();
                 for (var i = 0; i < _authManager.Credentials.Twitch_Channels.Count; i++)
                 {
