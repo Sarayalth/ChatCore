@@ -20,7 +20,7 @@ namespace ChatCore.Services
 	    private readonly TwitchService _twitchService;
 	    private readonly object _invokeLock = new object();
 
-	    public string DisplayName { get; private set; } = "Generic";
+	    public string DisplayName { get; }
 
 	    public ChatServiceMultiplexer(ILogger<ChatServiceMultiplexer> logger, IList<IChatService> streamingServices)
         {
@@ -28,7 +28,7 @@ namespace ChatCore.Services
             _streamingServices = streamingServices;
             _twitchService = (TwitchService)streamingServices.First(s => s is TwitchService);
 
-            var sb = new StringBuilder();
+            var displayNameBuilder = new StringBuilder();
             foreach (var service in _streamingServices)
             {
                 service.OnTextMessageReceived += Service_OnTextMessageReceived;
@@ -40,13 +40,15 @@ namespace ChatCore.Services
                 service.OnMessageCleared += Service_OnMessageCleared;
                 service.OnChannelResourceDataCached += Service_OnChannelResourceDataCached;
 
-                if(sb.Length > 0)
+                if(displayNameBuilder.Length > 0)
                 {
-                    sb.Append(", ");
+                    displayNameBuilder.Append(", ");
                 }
-                sb.Append(service.DisplayName);
+
+                displayNameBuilder.Append(service.DisplayName);
             }
-            DisplayName = sb.ToString();
+
+            DisplayName = displayNameBuilder.Length > 0 ? displayNameBuilder.ToString() : "Generic";
         }
 
         private void Service_OnChannelResourceDataCached(IChatService svc, IChatChannel channel, Dictionary<string, IChatResourceData> resources)
