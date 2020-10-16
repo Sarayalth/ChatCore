@@ -32,13 +32,17 @@ namespace ChatCore.Models
             if (obj.TryGetKey(nameof(Emotes), out var emotes))
             {
                 var emoteList = new List<IChatEmote>();
-                foreach (var emote in emotes.AsArray)
+                if (emotes.AsArray is not null)
                 {
-                    if (emote.Value.TryGetKey(nameof(IChatEmote.Id), out var emoteNode))
-                    {
-                        emoteList.Add(new UnknownChatEmote(emoteNode.Value.ToString()));
-                    }
+	                foreach (var emote in emotes.AsArray)
+	                {
+		                if (emote.Value.TryGetKey(nameof(IChatEmote.Id), out var emoteNode))
+		                {
+			                emoteList.Add(new UnknownChatEmote(emoteNode.Value));
+		                }
+	                }
                 }
+
                 Emotes = emoteList.ToArray();
             }
         }
