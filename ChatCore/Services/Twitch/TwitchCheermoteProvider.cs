@@ -46,7 +46,7 @@ namespace ChatCore.Services.Twitch
 				}
 
 				var count = 0;
-				foreach (var node in json["actions"].AsArray.Values)
+				foreach (var node in json["actions"].AsArray!.Values)
 				{
 					//_logger.LogInformation($"Cheermote: {node.ToString()}");
 					var cheermote = new TwitchCheermoteData();

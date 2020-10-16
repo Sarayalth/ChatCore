@@ -27,10 +27,14 @@ namespace ChatCore.Models
             if (obj.TryGetKey(nameof(Badges), out var badges))
             {
                 var badgeList = new List<IChatBadge>();
-                foreach (var badge in badges.AsArray)
+                if (badges.AsArray is not null)
                 {
-                    badgeList.Add(new UnknownChatBadge(badge.Value.ToString()));
+	                foreach (var badge in badges.AsArray)
+	                {
+		                badgeList.Add(new UnknownChatBadge(badge.Value.ToString()));
+	                }
                 }
+
                 Badges = badgeList.ToArray();
             }
         }

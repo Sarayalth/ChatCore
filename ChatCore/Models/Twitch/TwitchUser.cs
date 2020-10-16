@@ -30,10 +30,14 @@ namespace ChatCore.Models.Twitch
             if (obj.TryGetKey(nameof(Badges), out var badges))
             {
                 var badgeList = new List<IChatBadge>();
-                foreach (var badge in badges.AsArray)
+                if (badges.AsArray is not null)
                 {
-                    badgeList.Add(new TwitchBadge(badge.ToString()));
+	                foreach (var badge in badges.AsArray)
+	                {
+		                badgeList.Add(new TwitchBadge(badge.ToString()));
+	                }
                 }
+
                 Badges = badgeList.ToArray();
             }
             if (obj.TryGetKey(nameof(IsSubscriber), out var isSubscriber)) { IsSubscriber = isSubscriber.AsBool; }
