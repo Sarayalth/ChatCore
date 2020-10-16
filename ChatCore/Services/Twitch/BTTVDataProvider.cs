@@ -44,12 +44,16 @@ namespace ChatCore.Services.Twitch
 				}
 
 				var count = 0;
-				foreach (JSONObject o in json["emotes"].AsArray)
+				var emoteArray = json["emotes"].AsArray;
+				if (emoteArray is not null)
 				{
-					var uri = $"https://cdn.betterttv.net/emote/{o["id"].Value}/3x";
-					var identifier = isGlobal ? o["code"].Value : $"{category}_{o["code"].Value}";
-					Resources.TryAdd(identifier, new ChatResourceData() {Uri = uri, IsAnimated = o["imageType"].Value == "gif", Type = isGlobal ? "BTTVGlobalEmote" : "BTTVChannelEmote"});
-					count++;
+					foreach (JSONObject o in emoteArray)
+					{
+						var uri = $"https://cdn.betterttv.net/emote/{o["id"].Value}/3x";
+						var identifier = isGlobal ? o["code"].Value : $"{category}_{o["code"].Value}";
+						Resources.TryAdd(identifier, new ChatResourceData() {Uri = uri, IsAnimated = o["imageType"].Value == "gif", Type = isGlobal ? "BTTVGlobalEmote" : "BTTVChannelEmote"});
+						count++;
+					}
 				}
 
 				_logger.LogDebug($"Success caching {count} BTTV {(isGlobal ? "global " : "")}emotes{(isGlobal ? "." : " for channel " + category)}.");

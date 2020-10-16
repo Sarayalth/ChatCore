@@ -45,9 +45,9 @@ namespace ChatCore.Services.Twitch
 				}
 
 				var count = 0;
-				foreach (JSONObject o in isGlobal ? json["sets"]["3"]["emoticons"].AsArray : json["sets"][json["room"]["set"].ToString()]["emoticons"].AsArray)
+				foreach (JSONObject o in isGlobal ? json["sets"]["3"]["emoticons"].AsArray! : json["sets"][json["room"]["set"].ToString()]["emoticons"].AsArray!)
 				{
-					var urls = o["urls"].AsObject;
+					var urls = o["urls"].AsObject!;
 					var uri = urls[urls.Count - 1].Value;
 					var identifier = isGlobal ? o["name"].Value : $"{category}_{o["name"].Value}";
 					Resources[identifier] = new ChatResourceData {Uri = uri, IsAnimated = false, Type = isGlobal ? "FFZGlobalEmote" : "FFZChannelEmote"};

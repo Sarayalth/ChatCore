@@ -48,11 +48,11 @@ namespace ChatCore.Services.Twitch
 				foreach (var kvp in json["badge_sets"])
 				{
 					var badgeName = kvp.Key;
-					foreach (var version in kvp.Value.AsObject["versions"].AsObject)
+					foreach (var version in kvp.Value.AsObject!["versions"].AsObject!)
 					{
 						var badgeVersion = version.Key;
 						var finalName = $"{badgeName}{badgeVersion}";
-						var uri = version.Value.AsObject["image_url_4x"].Value;
+						var uri = version.Value.AsObject!["image_url_4x"].Value;
 						//_logger.LogInformation($"Global Badge: {finalName}, URI: {uri}");
 						var identifier = isGlobal ? finalName : $"{category}_{finalName}";
 						Resources[identifier] = new ChatResourceData() {Uri = uri, IsAnimated = false, Type = isGlobal ? "TwitchGlobalBadge" : "TwitchChannelBadge"};
