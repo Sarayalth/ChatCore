@@ -5,9 +5,9 @@ namespace ChatCore.Models.Twitch
 {
     public class CheermoteTier : IChatResourceData
     {
-        public string Uri { get; internal set; }
-        public int MinBits { get; internal set; }
-        public string Color { get; internal set; }
+	    public string Uri { get; internal set; } = null!;
+	    public int MinBits { get; internal set; }
+	    public string Color { get; internal set; } = null!;
         public bool CanCheer { get; internal set; }
         public bool IsAnimated { get; internal set; } = true;
         public string Type { get; internal set; } = "TwitchCheermote";
@@ -15,7 +15,7 @@ namespace ChatCore.Models.Twitch
 
     public class TwitchCheermoteData
     {
-        public string Prefix;
+        public string? Prefix;
         public List<CheermoteTier> Tiers = new List<CheermoteTier>();
 
         public CheermoteTier GetTier(int numBits)

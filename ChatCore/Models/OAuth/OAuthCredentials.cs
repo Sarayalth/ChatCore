@@ -4,8 +4,8 @@ namespace ChatCore.Models.OAuth
 {
     public class OAuthCredentials
     {
-        public string AccessToken;
-        public string RefreshToken;
+        public string AccessToken = null!;
+        public string RefreshToken = null!;
         public DateTime ExpiresAt;
     }
 }

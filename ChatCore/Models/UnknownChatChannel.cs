@@ -5,8 +5,8 @@ namespace ChatCore.Models
 {
     public class UnknownChatChannel : IChatChannel
     {
-        public string Id { get; internal set; }
-        public string Name { get; internal set; }
+        public string Id { get; internal set; } = null!;
+        public string Name { get; internal set; } = null!;
 
         public UnknownChatChannel() { }
         public UnknownChatChannel(string json)
