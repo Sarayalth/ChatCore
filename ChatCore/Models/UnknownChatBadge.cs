@@ -5,9 +5,9 @@ namespace ChatCore.Models
 {
     public class UnknownChatBadge : IChatBadge
     {
-        public string? Id { get; internal set; }
-        public string? Name { get; internal set; }
-        public string? Uri { get; internal set; }
+	    public string Id { get; internal set; } = null!;
+        public string Name { get; internal set; } = null!;
+        public string Uri { get; internal set; } = null!;
 
         public UnknownChatBadge() { }
         public UnknownChatBadge(string json)

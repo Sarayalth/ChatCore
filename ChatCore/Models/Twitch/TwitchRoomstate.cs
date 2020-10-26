@@ -4,8 +4,8 @@ namespace ChatCore.Models.Twitch
 {
     public class TwitchRoomstate
     {
-        public string BroadcasterLang { get; internal set; }
-        public string RoomId { get; internal set; }
+	    public string BroadcasterLang { get; internal set; } = null!;
+	    public string RoomId { get; internal set; } = null!;
         public bool EmoteOnly { get; internal set; }
         public bool FollowersOnly { get; internal set; }
         public bool SubscribersOnly { get; internal set; }
@@ -30,7 +30,7 @@ namespace ChatCore.Models.Twitch
             if (obj.TryGetKey(nameof(EmoteOnly), out var emoteOnly)) { EmoteOnly = emoteOnly.AsBool; }
             if (obj.TryGetKey(nameof(FollowersOnly), out var followersOnly)) { FollowersOnly = followersOnly.AsBool; }
             if (obj.TryGetKey(nameof(SubscribersOnly), out var subscribersOnly)) { SubscribersOnly = subscribersOnly.AsBool; }
-            if (obj.TryGetKey(nameof(R9K), out var r9k)) { R9K = r9k.AsBool; }
+            if (obj.TryGetKey(nameof(R9K), out var r9K)) { R9K = r9K.AsBool; }
             if (obj.TryGetKey(nameof(SlowModeInterval), out var slowModeInterval)) { SlowModeInterval = slowModeInterval.AsInt; }
             if (obj.TryGetKey(nameof(MinFollowTime), out var minFollowTime)) { MinFollowTime = minFollowTime.AsInt; }
         }

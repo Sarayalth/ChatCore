@@ -6,13 +6,13 @@ namespace ChatCore.Models
 {
     public class UnknownChatUser : IChatUser
     {
-        public string Id { get; internal set; }
-        public string UserName { get; internal set; }
-        public string DisplayName { get; internal set; }
-        public string Color { get; internal set; }
+        public string Id { get; internal set; }  = null!;
+        public string UserName { get; internal set; } = null!;
+        public string DisplayName { get; internal set; } = null!;
+        public string Color { get; internal set; } = null!;
         public bool IsBroadcaster { get; internal set; }
         public bool IsModerator { get; internal set; }
-        public IChatBadge[] Badges { get; internal set; }
+        public IChatBadge[] Badges { get; internal set; } = new IChatBadge[0];
 
         public UnknownChatUser() { }
         public UnknownChatUser(string json)

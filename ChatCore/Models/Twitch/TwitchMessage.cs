@@ -8,20 +8,21 @@ namespace ChatCore.Models.Twitch
 {
     public class TwitchMessage : IChatMessage, ICloneable
     {
-        public string Id { get; internal set; }
-        public string Message { get; internal set; }
+        public string Id { get; internal set; } = null!;
+        public string Message { get; internal set; } = null!;
         public bool IsSystemMessage { get; internal set; }
         public bool IsActionMessage { get; internal set; }
         public bool IsHighlighted { get; internal set; }
         public bool IsPing { get; internal set; }
-        public IChatUser Sender { get; internal set; }
-        public IChatChannel Channel { get; internal set; }
-        public IChatEmote[] Emotes { get; internal set; }
-        public ReadOnlyDictionary<string, string> Metadata { get; internal set; }
+        public IChatUser Sender { get; internal set; } = null!;
+        public IChatChannel Channel { get; internal set; } = null!;
+        public IChatEmote[] Emotes { get; internal set; } = new IChatEmote[0];
+        public ReadOnlyDictionary<string, string> Metadata { get; internal set; } = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
+
         /// <summary>
         /// The IRC message type for this TwitchMessage
         /// </summary>
-        public string Type { get; internal set; }
+        public string Type { get; internal set; } = null!;
         /// <summary>
         /// The number of bits in this message, if any.
         /// </summary>
