@@ -9,6 +9,7 @@ using ChatCore.Utilities;
 
 namespace ChatCore.Services.Twitch
 {
+	// ReSharper disable once InconsistentNaming
 	public class FFZDataProvider : IChatResourceProvider<ChatResourceData>
 	{
 		private readonly ILogger _logger;

@@ -7,7 +7,9 @@ namespace ChatCore.Models
     {
         [ConfigSection("Twitch")]
         [ConfigMeta(Comment = "The OAuth token associated with your Twitch account. Grab it from https://twitchapps.com/tmi/")]
+        // ReSharper disable InconsistentNaming
         public string Twitch_OAuthToken = "";
-        public List<string> Twitch_Channels = new List<string>();
+        public readonly List<string> Twitch_Channels = new List<string>();
+        // ReSharper restore InconsistentNaming
     }
 }
