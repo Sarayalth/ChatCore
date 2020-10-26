@@ -48,7 +48,7 @@
 		<None Remove="internalize_excludes.txt"/>
 	</ItemGroup>
 
-	<Target Name="ILMerge" AfterTargets="Build" Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	<Target Name="ILMerge" AfterTargets="Build">
 		<Exec Command="cd &quot;$(OutDir)&quot;&#xD;&#xA;&quot;$(ILMergeConsolePath)&quot; /xmldocs /targetplatform:v4 /ndebug /allowDup /internalize:&quot;$(ProjectDir)internalize_excludes.txt&quot; /wildcards /out:&quot;$(TargetFileName)&quot; *.dll"/>
 	</Target>
 
