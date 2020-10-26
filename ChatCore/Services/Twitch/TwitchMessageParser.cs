@@ -35,7 +35,9 @@ namespace ChatCore.Services.Twitch
         /// Takes a raw Twitch message and parses it into an IChatMessage
         /// </summary>
         /// <param name="rawMessage">The raw message sent from Twitch</param>
+        /// <param name="loggedInUser"></param>
         /// <param name="parsedMessages">A list of chat messages that were parsed from the rawMessage</param>
+        /// <param name="channelInfo"></param>
         /// <returns>True if parsedMessages.Count > 0</returns>
         public bool ParseRawMessage(string rawMessage, ConcurrentDictionary<string, IChatChannel> channelInfo, IChatUser loggedInUser, out IChatMessage[] parsedMessages)
         {
@@ -232,7 +234,7 @@ namespace ChatCore.Services.Twitch
                             EmoteOnly = messageMeta.TryGetValue("emote-only", out var emoteOnly) && emoteOnly == "1",
                             FollowersOnly = messageMeta.TryGetValue("followers-only", out var followersOnly) && followersOnly != "-1",
                             MinFollowTime = followersOnly != "-1" && int.TryParse(followersOnly, out var minFollowTime) ? minFollowTime : 0,
-                            R9K = messageMeta.TryGetValue("r9k", out var r9k) ? r9k == "1" : false,
+                            R9K = messageMeta.TryGetValue("r9k", out var r9K) && r9K == "1",
                             SlowModeInterval = messageMeta.TryGetValue("slow", out var slow) && int.TryParse(slow, out var slowModeInterval) ? slowModeInterval : 0,
                             SubscribersOnly = messageMeta.TryGetValue("subs-only", out var subsOnly) && subsOnly == "1"
                         };

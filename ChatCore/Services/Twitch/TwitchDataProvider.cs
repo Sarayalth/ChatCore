@@ -203,9 +203,9 @@ namespace ChatCore.Services.Twitch
 			return _twitchCheermoteProvider.TryGetResource(prefix, roomId, out data) && int.TryParse(word.Substring(prefixLength), out numBits);
 		}
 
-		internal bool TryGetBadgeInfo(string badgeId, string roomid, out ChatResourceData badge)
+		internal bool TryGetBadgeInfo(string badgeId, string roomId, out ChatResourceData badge)
 		{
-			if (_twitchBadgeProvider.TryGetResource(badgeId, roomid, out badge))
+			if (_twitchBadgeProvider.TryGetResource(badgeId, roomId, out badge))
 			{
 				return true;
 			}
