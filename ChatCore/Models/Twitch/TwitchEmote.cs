@@ -6,9 +6,9 @@ namespace ChatCore.Models.Twitch
 {
     public class TwitchEmote : IChatEmote
     {
-        public string Id { get; internal set; }
-        public string Name { get; internal set; }
-        public string Uri { get; internal set; }
+	    public string Id { get; internal set; } = null!;
+        public string Name { get; internal set; } = null!;
+        public string Uri { get; internal set; } = null!;
         public int StartIndex { get; internal set; }
         public int EndIndex { get; internal set; }
         public bool IsAnimated { get; internal set; }
@@ -21,7 +21,7 @@ namespace ChatCore.Models.Twitch
         /// <summary>
         /// If there are bits associated with this emote, this is the color the bits text should be.
         /// </summary>
-        public string Color { get; internal set; }
+        public string Color { get; internal set; } = null!;
 
         public TwitchEmote() { }
         public TwitchEmote(string json)

@@ -6,18 +6,19 @@ namespace ChatCore.Models.Twitch
 {
     public class TwitchUser : IChatUser
     {
-        public string Id { get; internal set; }
-        public string UserName { get; internal set; }
-        public string DisplayName { get; internal set; }
-        public string Color { get; internal set; }
+	    public string Id { get; internal set; } = null!;
+        public string UserName { get; internal set; } = null!;
+        public string DisplayName { get; internal set; } = null!;
+        public string Color { get; internal set; } = null!;
         public bool IsModerator { get; internal set; }
         public bool IsBroadcaster { get; internal set; }
         public bool IsSubscriber { get; internal set; }
         public bool IsTurbo { get; internal set; }
         public bool IsVip { get; internal set; }
-        public IChatBadge[] Badges { get; internal set; }
+        public IChatBadge[] Badges { get; internal set; } = new IChatBadge[0];
 
         public TwitchUser() { }
+
         public TwitchUser(string json)
         {
             var obj = JSON.Parse(json);
@@ -44,6 +45,7 @@ namespace ChatCore.Models.Twitch
             if (obj.TryGetKey(nameof(IsTurbo), out var isTurbo)) { IsTurbo = isTurbo.AsBool; }
             if (obj.TryGetKey(nameof(IsVip), out var isVip)) { IsVip = isVip.AsBool; }
         }
+
         public JSONObject ToJson()
         {
             var obj = new JSONObject();

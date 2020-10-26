@@ -5,9 +5,9 @@ namespace ChatCore.Models.Twitch
 {
     public class TwitchBadge : IChatBadge
     {
-        public string Id { get; internal set; }
-        public string Name { get; internal set; }
-        public string Uri { get; internal set; }
+	    public string Id { get; internal set; } = null!;
+	    public string Name { get; internal set; } = null!;
+	    public string Uri { get; internal set; } = null!;
 
         public TwitchBadge() { }
         public TwitchBadge(string json)
@@ -17,6 +17,7 @@ namespace ChatCore.Models.Twitch
             if (obj.TryGetKey(nameof(Name), out var name)) { Name = name.Value; }
             if (obj.TryGetKey(nameof(Uri), out var uri)) { Uri = uri.Value; }
         }
+
         public JSONObject ToJson()
         {
             var obj = new JSONObject();
