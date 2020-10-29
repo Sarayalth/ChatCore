@@ -1,4 +1,4 @@
-﻿using ChatCore.Interfaces;
+using ChatCore.Interfaces;
 using ChatCore.Models;
 using Microsoft.Extensions.Logging;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Threading.Tasks;
 using ChatCore.Utilities;
+using System.Reflection;
 
 namespace ChatCore.Services.Twitch
 {
@@ -30,6 +31,7 @@ namespace ChatCore.Services.Twitch
 			{
 				_logger.LogDebug($"Requesting BTTV {(isGlobal ? "global " : "")}emotes{(isGlobal ? "." : $" for channel {category}")}.");
 				using var msg = new HttpRequestMessage(HttpMethod.Get, isGlobal ? "https://api.betterttv.net/2/emotes" : $"https://api.betterttv.net/2/channels/{category}");
+				msg.Headers.Add("User-Agent", $"ChatCore/{Assembly.GetExecutingAssembly().GetName().Version}");
 				var resp = await _httpClient.SendAsync(msg);
 				if (!resp.IsSuccessStatusCode)
 				{
