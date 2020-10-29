@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
+using System.Diagnostics;
 using System.Windows.Forms;
 using ChatCore;
 using ChatCore.Interfaces;
@@ -14,24 +7,25 @@ using ChatCore.Models.Twitch;
 using ChatCore.Services;
 using ChatCore.Services.Twitch;
 
-namespace StreamCoreTester
+namespace ChatCoreTester
 {
     public partial class Form1 : Form
     {
-        private ChatServiceMultiplexer streamingService;
-        private TwitchService twitchService;
+        private readonly ChatServiceMultiplexer _streamingService;
+        private TwitchService _twitchService;
         public Form1()
         {
             InitializeComponent();
 
-            var streamCore = ChatCoreInstance.Create();
-            streamingService = streamCore.RunAllServices();
-            twitchService = streamingService.GetTwitchService();
-            streamingService.OnLogin += StreamingService_OnLogin; 
-            streamingService.OnTextMessageReceived += StreamServiceProvider_OnMessageReceived;
-            streamingService.OnJoinChannel += StreamServiceProvider_OnChannelJoined;
-            streamingService.OnLeaveChannel += StreamServiceProvider_OnLeaveChannel;
-            streamingService.OnRoomStateUpdated += StreamServiceProvider_OnChannelStateUpdated;
+            var chatCore = ChatCoreInstance.Create();
+            chatCore.OnLogReceived += (level, category, message) => Debug.WriteLine($"{level} | {category} | {message}");
+            _streamingService = chatCore.RunAllServices();
+            _twitchService = _streamingService.GetTwitchService();
+            _streamingService.OnLogin += StreamingService_OnLogin;
+            _streamingService.OnTextMessageReceived += StreamServiceProvider_OnMessageReceived;
+            _streamingService.OnJoinChannel += StreamServiceProvider_OnChannelJoined;
+            _streamingService.OnLeaveChannel += StreamServiceProvider_OnLeaveChannel;
+            _streamingService.OnRoomStateUpdated += StreamServiceProvider_OnChannelStateUpdated;
             //Console.WriteLine($"StreamService is of type {streamServiceProvider.ServiceType.Name}");
         }
 
@@ -39,7 +33,7 @@ namespace StreamCoreTester
         {
             if(svc is TwitchService twitchService)
             {
-                twitchService.JoinChannel("brian91292");
+                twitchService.JoinChannel("realeris");
             }
         }
 
@@ -70,17 +64,17 @@ namespace StreamCoreTester
 
         private void button1_Click(object sender, EventArgs e)
         {
-            streamingService.GetTwitchService().PartChannel("xqcow");
+            _streamingService.GetTwitchService().PartChannel("xqcow");
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            streamingService.GetTwitchService().JoinChannel("xqcow");
+            _streamingService.GetTwitchService().JoinChannel("xqcow");
         }
 
-        private void button3_Click(object sender, EventArgs e)
-        {
-            streamingService.GetMixerService().SendTextMessage("This is a test message :)", streamingService.GetMixerService().Channels.Values.First());
-        }
-    }
+		private void button3_Click(object sender, EventArgs e)
+		{
+			_twitchService.SendTextMessage("Heya", "realeris");
+		}
+	}
 }

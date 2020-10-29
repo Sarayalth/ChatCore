@@ -1,7 +1,4 @@
-﻿using ChatCore.Models;
-using ChatCore.SimpleJSON;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -9,12 +6,13 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using ChatCore.Utilities;
 
 namespace ChatCore.Config
 {
     public class ObjectSerializer
     {
-        private static readonly Regex _configRegex = new Regex(@"(?<Section>\[[a-zA-Z0-9\s]+\])|(?<Name>[^=\/\/#\s]+)\s*=[\t\p{Zs}]*(?<Value>"".+""|({(?:[^{}]|(?<Array>{)|(?<-Array>}))+(?(Array)(?!))})|\S+)?[\t\p{Zs}]*((\/{2,2}|[#])(?<Comment>.+)?)?", RegexOptions.Compiled | RegexOptions.Multiline);
+        private static readonly Regex ConfigRegex = new Regex(@"(?<Section>\[[a-zA-Z0-9\s]+\])|(?<Name>[^=\/\/#\s]+)\s*=[\t\p{Zs}]*(?<Value>"".+""|({(?:[^{}]|(?<Array>{)|(?<-Array>}))+(?(Array)(?!))})|\S+)?[\t\p{Zs}]*((\/{2,2}|[#])(?<Comment>.+)?)?", RegexOptions.Compiled | RegexOptions.Multiline);
         private static readonly ConcurrentDictionary<Type, Func<FieldInfo, string, object>> ConvertFromString = new ConcurrentDictionary<Type, Func<FieldInfo, string, object>>();
         private static readonly ConcurrentDictionary<Type, Func<FieldInfo, object, string>> ConvertToString = new ConcurrentDictionary<Type, Func<FieldInfo, object, string>>();
         private readonly ConcurrentDictionary<string, string> _comments = new ConcurrentDictionary<string, string>();
@@ -22,48 +20,54 @@ namespace ChatCore.Config
         private static void InitTypeHandlers()
         {
             // String handlers
-            ConvertFromString.TryAdd(typeof(string), (fieldInfo, value) => { return (value.StartsWith("\"") && value.EndsWith("\"") ? value.Substring(1, value.Length - 2) : value); });
+            ConvertFromString.TryAdd(typeof(string), (_, value) => (value.StartsWith("\"") && value.EndsWith("\"") ? value.Substring(1, value.Length - 2) : value));
             ConvertToString.TryAdd(typeof(string), (fieldInfo, obj) =>
             {
-                string value = (string)obj.GetFieldValue(fieldInfo.Name);
+                var value = (string)obj.GetFieldValue(fieldInfo.Name);
                 // If the value is an array, we don't need quotes
                 if (value.StartsWith("{") && value.EndsWith("}"))
-                    return value;
+                {
+	                return value;
+                }
+
                 return $"\"{value}\"";
             });
 
             // Bool handlers
-            ConvertFromString.TryAdd(typeof(bool), (fieldInfo, value) => { return (value.Equals("true", StringComparison.CurrentCultureIgnoreCase) || value.Equals("on", StringComparison.CurrentCultureIgnoreCase) || value.Equals("1")); });
-            ConvertToString.TryAdd(typeof(bool), (fieldInfo, obj) => { return ((bool)obj.GetFieldValue(fieldInfo.Name)).ToString(); });
+            ConvertFromString.TryAdd(typeof(bool), (_, value) => (value.Equals("true", StringComparison.CurrentCultureIgnoreCase) || value.Equals("on", StringComparison.CurrentCultureIgnoreCase) || value.Equals("1")));
+            ConvertToString.TryAdd(typeof(bool), (fieldInfo, obj) => ((bool)obj.GetFieldValue(fieldInfo.Name)).ToString());
 
             // Enum handlers
-            ConvertFromString.TryAdd(typeof(Enum), (fieldInfo, value) => { return Enum.Parse(fieldInfo.FieldType, value); });
-            ConvertToString.TryAdd(typeof(Enum), (fieldInfo, obj) => { return obj.GetFieldValue(fieldInfo.Name).ToString(); });
+            ConvertFromString.TryAdd(typeof(Enum), (fieldInfo, value) => Enum.Parse(fieldInfo.FieldType, value));
+            ConvertToString.TryAdd(typeof(Enum), (fieldInfo, obj) => obj.GetFieldValue(fieldInfo.Name).ToString());
 
             // DateTime handler
-            ConvertFromString.TryAdd(typeof(DateTime), (fieldInfo, value) => { return DateTime.FromFileTimeUtc(long.Parse(value)); });
-            ConvertToString.TryAdd(typeof(DateTime), (fieldInfo, obj) => { return ((DateTime)obj.GetFieldValue(fieldInfo.Name)).ToFileTimeUtc().ToString(); });
+            ConvertFromString.TryAdd(typeof(DateTime), (_, value) => DateTime.FromFileTimeUtc(long.Parse(value)));
+            ConvertToString.TryAdd(typeof(DateTime), (fieldInfo, obj) => ((DateTime)obj.GetFieldValue(fieldInfo.Name)).ToFileTimeUtc().ToString());
 
 
             // List<string> handlers
-            ConvertFromString.TryAdd(typeof(List<string>), (fieldInfo, value) =>
+            ConvertFromString.TryAdd(typeof(List<string>), (_, value) =>
             {
                 if (value.StartsWith("\"") && value.EndsWith("\""))
                 {
                     value = value.Substring(1, value.Length - 2);
                 }
+
                 if(string.IsNullOrEmpty(value))
                 {
                     return new List<string>();
                 }
-                return new List<string>(value.Replace(" ", "").ToLower().TrimEnd(new char[] { ',' }).Split(new char[] { ',' }));
+
+                return new List<string>(value.Replace(" ", "").ToLower().TrimEnd(',').Split(','));
             });
-            ConvertToString.TryAdd(typeof(List<string>), (fieldInfo, obj) => { return "\"" + string.Join(",", (List<string>)obj.GetFieldValue(fieldInfo.Name)).Replace(" ", "").ToLower().TrimEnd(new char[] { ',' }) + "\""; });
+
+            ConvertToString.TryAdd(typeof(List<string>), (fieldInfo, obj) => { return "\"" + string.Join(",", (List<string>)obj.GetFieldValue(fieldInfo.Name)).Replace(" ", "").ToLower().TrimEnd(new[] { ',' }) + "\""; });
         }
 
         private static bool CreateDynamicFieldConverter(FieldInfo fieldInfo)
         {
-            Type fieldType = fieldInfo.FieldType;
+            var fieldType = fieldInfo.FieldType;
             if (TryCreateFieldConverterFromParseFunction(fieldInfo))
             {
                 return true;
@@ -86,8 +90,8 @@ namespace ChatCore.Config
 
             ConvertFromString.TryAdd(fieldType, (fi, v) =>
             {
-                JSONNode json = JSON.Parse(v);
-                object obj = Activator.CreateInstance(fi.FieldType);
+                var json = JSON.Parse(v);
+                var obj = Activator.CreateInstance(fi.FieldType);
                 foreach (var subFieldInfo in fi.FieldType.GetRuntimeFields())
                 {
                     if (!subFieldInfo.IsPrivate && !subFieldInfo.IsStatic)
@@ -97,27 +101,29 @@ namespace ChatCore.Config
                 }
                 return obj;
             });
+
             ConvertToString.TryAdd(fieldType, (fi, v) =>
             {
-                JSONObject json = new JSONObject();
+                var json = new JSONObject();
                 // Grab the current field we're trying to convert off the parent object
                 var currentField = v.GetFieldValue(fi.Name);
                 foreach (var subFieldInfo in fi.FieldType.GetRuntimeFields())
                 {
                     if (!subFieldInfo.IsPrivate && !subFieldInfo.IsStatic)
                     {
-                        string value = ConvertToString[subFieldInfo.FieldType].Invoke(subFieldInfo, currentField);
+                        var value = ConvertToString[subFieldInfo.FieldType].Invoke(subFieldInfo, currentField);
                         json.Add(subFieldInfo.Name, new JSONString(value));
                     }
                 }
                 return json.ToString();
             });
+
             return true;
         }
 
         private static bool TryCreateFieldConverterFromParseFunction(FieldInfo fieldInfo)
         {
-            Type fieldType = fieldInfo.FieldType;
+            var fieldType = fieldInfo.FieldType;
             if (ConvertFromString.ContainsKey(fieldType) && ConvertToString.ContainsKey(fieldType))
             {
                 // Converters already exist for these types
@@ -143,8 +149,8 @@ namespace ChatCore.Config
                             continue;
                         }
 
-                        ConvertFromString.TryAdd(fieldType, (fi, v) => { return func.Invoke(null, new object[] { v }); });
-                        ConvertToString.TryAdd(fieldType, (fi, v) => { return v.GetFieldValue(fi.Name).ToString(); });
+                        ConvertFromString.TryAdd(fieldType, (_, v) => func.Invoke(null, new object[] { v }));
+                        ConvertToString.TryAdd(fieldType, (fi, v) => v.GetFieldValue(fi.Name).ToString());
 
                         return true;
                 }
@@ -155,9 +161,11 @@ namespace ChatCore.Config
         public void Load(object obj, string path)
         {
             if (ConvertFromString.Count == 0)
-                InitTypeHandlers();
+            {
+	            InitTypeHandlers();
+            }
 
-            string backupPath = path + ".bak";
+            var backupPath = path + ".bak";
             if (File.Exists(backupPath) && !File.Exists(path))
             {
                 File.Move(backupPath, path);
@@ -165,14 +173,12 @@ namespace ChatCore.Config
 
             if (File.Exists(path))
             {
-                var matches = _configRegex.Matches(File.ReadAllText(path));
-                string currentSection = null;
+                var matches = ConfigRegex.Matches(File.ReadAllText(path));
                 foreach (Match match in matches)
                 {
                     if (match.Groups["Section"].Success)
                     {
-                        currentSection = match.Groups["Section"].Value;
-                        continue;
+	                    continue;
                     }
 
                     // Grab the name, which has to exist or the regex wouldn't have matched
@@ -182,12 +188,15 @@ namespace ChatCore.Config
                     if (match.Groups["Comment"].Success)
                     {
                         // Then store them in memory so we can write them back later on
-                        _comments[name] = match.Groups["Comment"].Value.TrimEnd(new char[] { '\n', '\r' });
+                        _comments[name] = match.Groups["Comment"].Value.TrimEnd(new[] { '\n', '\r' });
                     }
 
                     // If there's no value, continue on at this point
                     if (!match.Groups["Value"].Success)
-                        continue;
+                    {
+	                    continue;
+                    }
+
                     var value = match.Groups["Value"].Value;
 
                     // Otherwise, read the value in with the appropriate handler
@@ -200,7 +209,7 @@ namespace ChatCore.Config
                     }
 
                     // If the fieldType is an enum, replace it with the generic Enum type
-                    Type fieldType = fieldInfo.FieldType.IsEnum ? typeof(Enum) : fieldInfo.FieldType;
+                    var fieldType = fieldInfo.FieldType.IsEnum ? typeof(Enum) : fieldInfo.FieldType;
 
                     // Invoke our ConvertFromString method if it exists
                     if (!ConvertFromString.TryGetValue(fieldType, out var convertFromString))
@@ -212,10 +221,10 @@ namespace ChatCore.Config
                     }
                     try
                     {
-                        object converted = convertFromString.Invoke(fieldInfo, value);
+                        var converted = convertFromString.Invoke(fieldInfo, value);
                         fieldInfo.SetValue(obj, converted);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         //Plugin.Log($"Failed to parse field {name} with value {value} as type {fieldInfo.FieldType.Name}. {ex.ToString()}");
                     }
@@ -226,9 +235,11 @@ namespace ChatCore.Config
         public void Save(object obj, string path)
         {
             if (ConvertToString.Count == 0)
-                InitTypeHandlers();
+            {
+	            InitTypeHandlers();
+            }
 
-            string backupPath = path + ".bak";
+            var backupPath = path + ".bak";
             if (File.Exists(path))
             {
                 if (File.Exists(backupPath))
@@ -238,13 +249,12 @@ namespace ChatCore.Config
                 File.Move(path, backupPath);
             }
 
-            string lastConfigSection = null;
-            List<string> serializedClass = new List<string>();
+            string? lastConfigSection = null;
+            var serializedClass = new List<string>();
 
-            var configHeader = (ConfigHeader)obj.GetType().GetCustomAttribute(typeof(ConfigHeader));
-            if (configHeader != null)
+            if (obj.GetType().GetCustomAttribute(typeof(ConfigHeader)) is ConfigHeader configHeader)
             {
-                foreach (string comment in configHeader.Comment)
+                foreach (var comment in configHeader.Comment)
                 {
                     serializedClass.Add(string.IsNullOrWhiteSpace(comment) ? comment : $"// {comment}");
                 }
@@ -253,7 +263,7 @@ namespace ChatCore.Config
             foreach (var fieldInfo in obj.GetType().GetFields())
             {
                 // If the fieldType is an enum, replace it with the generic Enum type
-                Type fieldType = fieldInfo.FieldType.IsEnum ? typeof(Enum) : fieldInfo.FieldType;
+                var fieldType = fieldInfo.FieldType.IsEnum ? typeof(Enum) : fieldInfo.FieldType;
 
                 // Invoke our convertFromString method if it exists
                 if (!ConvertToString.TryGetValue(fieldType, out var convertToString))
@@ -264,8 +274,7 @@ namespace ChatCore.Config
                     }
                 }
 
-                var configSection = (ConfigSection)fieldInfo.GetCustomAttribute(typeof(ConfigSection));
-                if (configSection != null && !string.IsNullOrEmpty(configSection.Name))
+                if (fieldInfo.GetCustomAttribute(typeof(ConfigSection)) is ConfigSection configSection && !string.IsNullOrEmpty(configSection.Name))
                 {
                     if (lastConfigSection != null && configSection.Name != lastConfigSection)
                     {
@@ -275,12 +284,11 @@ namespace ChatCore.Config
                     lastConfigSection = configSection.Name;
                 }
 
-                var configMeta = (ConfigMeta)fieldInfo.GetCustomAttribute(typeof(ConfigMeta));
-                string valueStr = "";
+                var configMeta = (ConfigMeta?)fieldInfo.GetCustomAttribute(typeof(ConfigMeta));
+                var valueStr = "";
                 try
                 {
-                    string comment = null;
-                    if (!_comments.TryGetValue(fieldInfo.Name, out comment))
+	                if (!_comments.TryGetValue(fieldInfo.Name, out var comment))
                     {
                         // If the user hasn't entered any of their own comments, use the default one of it exists
                         if (configMeta != null && !string.IsNullOrEmpty(configMeta.Comment))
@@ -290,23 +298,29 @@ namespace ChatCore.Config
                     }
                     valueStr = $"{convertToString.Invoke(fieldInfo, obj)}{(comment != null ? " //" + comment : "")}";
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //throw;
                     //Plugin.Log($"Failed to convert field {fieldInfo.Name} to string! Value type is {fieldInfo.FieldType.Name}. {ex.ToString()}");
                 }
                 serializedClass.Add($"{fieldInfo.Name.Replace("_", ".")}={valueStr}");
             }
-            if (path != string.Empty && serializedClass.Count > 0)
+
+            if (!string.IsNullOrEmpty(path) && serializedClass.Count > 0)
             {
-                string tmpPath = $"{path}.tmp";
-                if (!Directory.Exists(Path.GetDirectoryName(path)))
+                var dirName = Path.GetDirectoryName(path);
+                if (dirName != null && !Directory.Exists(dirName))
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                    Directory.CreateDirectory(dirName);
                 }
+
+                var tmpPath = $"{path}.tmp";
                 File.WriteAllLines(tmpPath, serializedClass.ToArray());
                 if (File.Exists(path))
-                    File.Delete(path);
+                {
+	                File.Delete(path);
+                }
+
                 File.Move(tmpPath, path);
             }
         }
@@ -316,15 +330,16 @@ namespace ChatCore.Config
         /// </summary>
         /// <param name="obj">The object to serialize into HTML</param>
         /// <returns></returns>
-        public Dictionary<string, string> GetSettingsAsHTML(object obj)
+        public Dictionary<string, string> GetSettingsAsHtml(object obj)
         {
             if (ConvertToString.Count == 0)
-                InitTypeHandlers();
+            {
+	            InitTypeHandlers();
+            }
 
-            string lastConfigSection = null;
-            Dictionary<string, string> sectionHtml = new Dictionary<string, string>();
-            List<string> currentSectionHtml = new List<string>();
-            string currentSectionName = "";
+            var sectionHtml = new Dictionary<string, string>();
+            var currentSectionHtml = new List<string>();
+            string? lastConfigSection = null;
             //currentSectionHtml.Add("<div class=\"panel-body\">");
 
             // TODO: serialize comments as tooltips?
@@ -340,7 +355,7 @@ namespace ChatCore.Config
             foreach (var fieldInfo in obj.GetType().GetFields())
             {
                 // If the fieldType is an enum, replace it with the generic Enum type
-                Type fieldType = fieldInfo.FieldType.IsEnum ? typeof(Enum) : fieldInfo.FieldType;
+                var fieldType = fieldInfo.FieldType.IsEnum ? typeof(Enum) : fieldInfo.FieldType;
 
                 // Invoke our convertFromString method if it exists
                 if (!ConvertToString.TryGetValue(fieldType, out var convertToString))
@@ -351,10 +366,9 @@ namespace ChatCore.Config
                     }
                 }
 
-                var configSection = (ConfigSection)fieldInfo.GetCustomAttribute(typeof(ConfigSection));
-                if (configSection != null && !string.IsNullOrEmpty(configSection.Name))
+                if (fieldInfo.GetCustomAttribute(typeof(ConfigSection)) is ConfigSection configSection && !string.IsNullOrEmpty(configSection.Name))
                 {
-                    currentSectionName = configSection.Name;
+                    var currentSectionName = configSection.Name;
                     if (lastConfigSection != null && currentSectionName != lastConfigSection)
                     {
                         // End the previous section and start a new one
@@ -365,18 +379,16 @@ namespace ChatCore.Config
                     lastConfigSection = currentSectionName;
                 }
 
-                if (fieldInfo.GetCustomAttribute(typeof(HTMLIgnore)) != null)
+                if (fieldInfo.GetCustomAttribute(typeof(HtmlIgnore)) != null)
                 {
                     // Skip any fields with the HTMLIgnore attribute
                     continue;
                 }
 
-                var configMeta = (ConfigMeta)fieldInfo.GetCustomAttribute(typeof(ConfigMeta));
-                string valueStr = "";
+                var configMeta = fieldInfo.GetCustomAttribute(typeof(ConfigMeta)) as ConfigMeta;
                 try
                 {
-                    string comment = null;
-                    if (!_comments.TryGetValue(fieldInfo.Name, out comment))
+	                if (!_comments.TryGetValue(fieldInfo.Name, out string comment))
                     {
                         // If the user hasn't entered any of their own comments, use the default one of it exists
                         if (configMeta != null && !string.IsNullOrEmpty(configMeta.Comment))
@@ -387,19 +399,23 @@ namespace ChatCore.Config
 
                     currentSectionHtml.Add(obj.GetFieldValue(fieldInfo.Name) switch
                     {
-                        bool b => BuildSwitchHTML(fieldInfo.Name, b),
-                        int i => BuildNumberHTML(fieldInfo.Name, i),
-                        string s => BuildStringHTML(fieldInfo.Name, s),
-                        _ => BuildUnknownHTML(fieldInfo.Name, $"{convertToString.Invoke(fieldInfo, obj)}{(comment != null ? " //" + comment : "")}"),
+                        bool b => BuildSwitchHtml(fieldInfo.Name, b),
+                        int i => BuildNumberHtml(fieldInfo.Name, i),
+                        string s => BuildStringHtml(fieldInfo.Name, s),
+                        _ => BuildUnknownHtml(fieldInfo.Name, $"{convertToString.Invoke(fieldInfo, obj)}{(comment != null ? " //" + comment : "")}"),
                     });
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //throw;
                     //Plugin.Log($"Failed to convert field {fieldInfo.Name} to string! Value type is {fieldInfo.FieldType.Name}. {ex.ToString()}");
                 }
             }
-            sectionHtml[lastConfigSection] = string.Join(Environment.NewLine, currentSectionHtml);
+            if (lastConfigSection != null)
+            {
+	            sectionHtml[lastConfigSection] = string.Join(Environment.NewLine, currentSectionHtml);
+            }
+
             return sectionHtml;
         }
 
@@ -411,9 +427,11 @@ namespace ChatCore.Config
         public void SetFromDictionary(object obj, Dictionary<string, string> postData)
         {
             if (ConvertFromString.Count == 0)
-                InitTypeHandlers();
+            {
+	            InitTypeHandlers();
+            }
 
-            foreach (KeyValuePair<string, string> kvp in postData)
+            foreach (var kvp in postData)
             {
                 // Otherwise, read the value in with the appropriate handler
                 var fieldInfo = obj.GetType().GetField(kvp.Key.Replace(".", "_"));
@@ -425,7 +443,7 @@ namespace ChatCore.Config
                 }
 
                 // If the fieldType is an enum, replace it with the generic Enum type
-                Type fieldType = fieldInfo.FieldType.IsEnum ? typeof(Enum) : fieldInfo.FieldType;
+                var fieldType = fieldInfo.FieldType.IsEnum ? typeof(Enum) : fieldInfo.FieldType;
 
                 // Invoke our ConvertFromString method if it exists
                 if (!ConvertFromString.TryGetValue(fieldType, out var convertFromString))
@@ -437,19 +455,19 @@ namespace ChatCore.Config
                 }
                 try
                 {
-                    object converted = convertFromString.Invoke(fieldInfo, kvp.Value);
+                    var converted = convertFromString.Invoke(fieldInfo, kvp.Value);
                     fieldInfo.SetValue(obj, converted);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //Plugin.Log($"Failed to parse field {name} with value {value} as type {fieldInfo.FieldType.Name}. {ex.ToString()}");
                 }
             }
         }
 
-        private string BuildSwitchHTML(string name, bool b)
+        private static string BuildSwitchHtml(string name, bool b)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append($"<label class=\"form-switch\">\r\n");
             sb.Append($"\t<input type=\"hidden\" value=\"off\" name=\"{name}\">\r\n");
             sb.Append($"\t<input name=\"{name}\" type=\"checkbox\" {(b ? "checked" : "")}>\r\n");
@@ -458,9 +476,9 @@ namespace ChatCore.Config
             return sb.ToString();
         }
 
-        private string BuildNumberHTML(string name, int i)
+        private static string BuildNumberHtml(string name, int i)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append($"<label class=\"form-label\">\r\n");
             sb.Append($"\t<i class=\"form-icon\"></i> {name.Uncamelcase()}\r\n");
             sb.Append($"\t<input name=\"{name}\" class=\"form-input\" type=\"number\" placeholder=\"00\" value=\"{i.ToString()}\">\r\n");
@@ -468,9 +486,9 @@ namespace ChatCore.Config
             return sb.ToString();
         }
 
-        private string BuildStringHTML(string name, string s)
+        private static string BuildStringHtml(string name, string s)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append($"<label class=\"form-label\">\r\n");
             sb.Append($"\t<i class=\"form-icon\"></i> {name.Uncamelcase()}\r\n");
             sb.Append($"\t<input name=\"{name}\" class=\"form-input\" type=\"text\" placeholder=\"00\" value=\"{s}\">\r\n");
@@ -478,9 +496,9 @@ namespace ChatCore.Config
             return sb.ToString();
         }
 
-        private string BuildUnknownHTML(string name, string s)
+        private static string BuildUnknownHtml(string name, string s)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append($"<label class=\"form-label\">\r\n");
             sb.Append($"\t<i class=\"form-icon\"></i> {name.Uncamelcase()}\r\n");
             sb.Append($"\t<textarea name=\"name\" class=\"form-input\" placeholder=\"...\" rows=\"3\">{s}</textarea>\r\n");

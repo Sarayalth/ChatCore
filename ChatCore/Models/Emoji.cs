@@ -1,16 +1,14 @@
 ﻿using ChatCore.Interfaces;
-using ChatCore.SimpleJSON;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using ChatCore.Utilities;
 
 namespace ChatCore.Models
 {
     public class Emoji : IChatEmote
     {
-        public string Id { get; internal set; }
-        public string Name { get; internal set; }
-        public string Uri { get; internal set; }
+        public string Id { get; internal set; } = null!;
+        public string Name { get; internal set; } = null!;
+        public string Uri { get; internal set; } = null!;
         public int StartIndex { get; internal set; }
         public int EndIndex { get; internal set; }
         public bool IsAnimated { get; internal set; }
@@ -18,9 +16,10 @@ namespace ChatCore.Models
         public ImageRect UVs { get; internal set; }
 
         public Emoji() { }
+
         public Emoji(string json)
         {
-            JSONNode obj = JSON.Parse(json);
+            var obj = JSON.Parse(json);
             if (obj.TryGetKey(nameof(Id), out var id)) { Id = id.Value; }
             if (obj.TryGetKey(nameof(Name), out var name)) { Name = name.Value; }
             if (obj.TryGetKey(nameof(Uri), out var uri)) { Uri = uri.Value; }
@@ -30,9 +29,10 @@ namespace ChatCore.Models
             if (obj.TryGetKey(nameof(Type), out var type)) { Type = Enum.TryParse<EmoteType>(type.Value, out var typeEnum) ? typeEnum : EmoteType.SingleImage; }
             if (obj.TryGetKey(nameof(UVs), out var uvs)) { UVs = new ImageRect(uvs.Value); }
         }
+
         public JSONObject ToJson()
         {
-            JSONObject obj = new JSONObject();
+            var obj = new JSONObject();
             obj.Add(nameof(Id), new JSONString(Id));
             obj.Add(nameof(Name), new JSONString(Name));
             obj.Add(nameof(Uri), new JSONString(Uri));

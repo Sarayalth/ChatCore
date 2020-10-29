@@ -1,8 +1,6 @@
 ﻿using ChatCore.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace ChatCore.Services
 {

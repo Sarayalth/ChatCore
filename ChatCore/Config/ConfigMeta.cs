@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ChatCore.Config
 {
-    [System.AttributeUsage(System.AttributeTargets.Field)]
-    public class ConfigMeta : System.Attribute
+    [AttributeUsage(AttributeTargets.Field)]
+    public class ConfigMeta : Attribute
     {
         public string Comment;
         public ConfigMeta()
         {
-            Comment = null;
+            Comment = null!;
         }
     }
 }

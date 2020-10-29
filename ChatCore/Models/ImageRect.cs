@@ -1,47 +1,46 @@
-﻿using ChatCore.SimpleJSON;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ChatCore.Utilities;
 
 namespace ChatCore.Models
 {
     public struct ImageRect
     {
-        public int x;
-        public int y;
-        public int width;
-        public int height;
+        public int X;
+        public int Y;
+        public int Width;
+        public int Height;
+
         public ImageRect(string json)
         {
             var obj = JSON.Parse(json);
             if (obj != null)
             {
-                x = obj.TryGetKey(nameof(x), out var xJson) ? xJson.AsInt : 0;
-                y = obj.TryGetKey(nameof(y), out var yJson) ? yJson.AsInt : 0;
-                width = obj.TryGetKey(nameof(width), out var w) ? w.AsInt : 0;
-                height = obj.TryGetKey(nameof(x), out var h) ? h.AsInt : 0;
+                X = obj.TryGetKey("x", out var xJson) ? xJson.AsInt : 0;
+                Y = obj.TryGetKey("y", out var yJson) ? yJson.AsInt : 0;
+                Width = obj.TryGetKey("width", out var wJson) ? wJson.AsInt : 0;
+                Height = obj.TryGetKey("height", out var hJson) ? hJson.AsInt : 0;
             }
-            x = 0;
-            y = 0;
-            width = 0;
-            height = 0;
+
+            X = 0;
+            Y = 0;
+            Width = 0;
+            Height = 0;
         }
         public JSONObject ToJson()
         {
             var json = new JSONObject();
-            json.Add(nameof(x), new JSONNumber(x));
-            json.Add(nameof(y), new JSONNumber(y));
-            json.Add(nameof(width), new JSONNumber(width));
-            json.Add(nameof(height), new JSONNumber(height));
+            json.Add("x", new JSONNumber(X));
+            json.Add("y", new JSONNumber(Y));
+            json.Add("width", new JSONNumber(Width));
+            json.Add("height", new JSONNumber(Height));
             return json;
         }
 
-        public static ImageRect None = new ImageRect()
+        public static ImageRect None = new ImageRect
         {
-            x = 0,
-            y = 0,
-            width = 0,
-            height = 0
+            X = 0,
+            Y = 0,
+            Width = 0,
+            Height = 0
         };
     }
 }

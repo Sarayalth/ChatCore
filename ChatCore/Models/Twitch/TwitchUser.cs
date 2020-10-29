@@ -1,28 +1,27 @@
 ﻿using ChatCore.Interfaces;
-using ChatCore.SimpleJSON;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using ChatCore.Utilities;
 
 namespace ChatCore.Models.Twitch
 {
     public class TwitchUser : IChatUser
     {
-        public string Id { get; internal set; }
-        public string UserName { get; internal set; }
-        public string DisplayName { get; internal set; }
-        public string Color { get; internal set; }
+	    public string Id { get; internal set; } = null!;
+        public string UserName { get; internal set; } = null!;
+        public string DisplayName { get; internal set; } = null!;
+        public string Color { get; internal set; } = null!;
         public bool IsModerator { get; internal set; }
         public bool IsBroadcaster { get; internal set; }
         public bool IsSubscriber { get; internal set; }
         public bool IsTurbo { get; internal set; }
         public bool IsVip { get; internal set; }
-        public IChatBadge[] Badges { get; internal set; }
+        public IChatBadge[] Badges { get; internal set; } = new IChatBadge[0];
 
         public TwitchUser() { }
+
         public TwitchUser(string json)
         {
-            JSONNode obj = JSON.Parse(json);
+            var obj = JSON.Parse(json);
             if (obj.TryGetKey(nameof(Id), out var id)) { Id = id.Value; }
             if (obj.TryGetKey(nameof(UserName), out var username)) { UserName = username.Value; }
             if (obj.TryGetKey(nameof(DisplayName), out var displayName)) { DisplayName = displayName.Value; }
@@ -31,27 +30,32 @@ namespace ChatCore.Models.Twitch
             if (obj.TryGetKey(nameof(IsModerator), out var isModerator)) { IsModerator = isModerator.AsBool; }
             if (obj.TryGetKey(nameof(Badges), out var badges))
             {
-                List<IChatBadge> badgeList = new List<IChatBadge>();
-                foreach (var badge in badges.AsArray)
+                var badgeList = new List<IChatBadge>();
+                if (badges.AsArray is not null)
                 {
-                    badgeList.Add(new TwitchBadge(badge.ToString()));
+	                foreach (var badge in badges.AsArray)
+	                {
+		                badgeList.Add(new TwitchBadge(badge.ToString()));
+	                }
                 }
+
                 Badges = badgeList.ToArray();
             }
             if (obj.TryGetKey(nameof(IsSubscriber), out var isSubscriber)) { IsSubscriber = isSubscriber.AsBool; }
             if (obj.TryGetKey(nameof(IsTurbo), out var isTurbo)) { IsTurbo = isTurbo.AsBool; }
             if (obj.TryGetKey(nameof(IsVip), out var isVip)) { IsVip = isVip.AsBool; }
         }
+
         public JSONObject ToJson()
         {
-            JSONObject obj = new JSONObject();
+            var obj = new JSONObject();
             obj.Add(nameof(Id), new JSONString(Id));
             obj.Add(nameof(UserName), new JSONString(UserName));
             obj.Add(nameof(DisplayName), new JSONString(DisplayName));
             obj.Add(nameof(Color), new JSONString(Color));
             obj.Add(nameof(IsBroadcaster), new JSONBool(IsBroadcaster));
             obj.Add(nameof(IsModerator), new JSONBool(IsModerator));
-            JSONArray badges = new JSONArray();
+            var badges = new JSONArray();
             foreach (var badge in Badges)
             {
                 badges.Add(badge.ToJson());

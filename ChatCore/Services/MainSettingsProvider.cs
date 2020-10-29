@@ -1,18 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
-using ChatCore.Config;
+﻿using ChatCore.Config;
 using ChatCore.Interfaces;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Numerics;
 
 namespace ChatCore.Services
 {
     public class MainSettingsProvider
     {
         [ConfigSection("WebApp")]
-        [HTMLIgnore]
+        [HtmlIgnore]
         [ConfigMeta(Comment = "Set to true to disable the webapp entirely.")]
         public bool DisableWebApp = false;
         [ConfigMeta(Comment = "Whether or not to launch the webapp in your default browser when ChatCore is started.")]
@@ -26,40 +22,37 @@ namespace ChatCore.Services
 
         [ConfigSection("Twitch")]
         [ConfigMeta(Comment = "When enabled, BetterTwitchTV emotes will be parsed.")]
+        // ReSharper disable once InconsistentNaming
         public bool ParseBTTVEmotes = true;
         [ConfigMeta(Comment = "When enabled, FrankerFaceZ emotes will be parsed.")]
+        // ReSharper disable once InconsistentNaming
         public bool ParseFFZEmotes = true;
         [ConfigMeta(Comment = "When enabled, Twitch emotes will be parsed.")]
         public bool ParseTwitchEmotes = true;
         [ConfigMeta(Comment = "When enabled, Twitch cheermotes will be parsed.")]
         public bool ParseCheermotes = true;
 
-        [ConfigSection("Mixer")]
-        [ConfigMeta(Comment = "When enabled, Mixer emotes will be parsed.")]
-        public bool ParseMixerEmotes = true;
+        private readonly IPathProvider _pathProvider;
+        private readonly ObjectSerializer _configSerializer;
 
-        public MainSettingsProvider(ILogger<MainSettingsProvider> logger, IPathProvider pathProvider)
+        public MainSettingsProvider(IPathProvider pathProvider)
         {
-            _logger = logger;
             _pathProvider = pathProvider;
             _configSerializer = new ObjectSerializer();
-            string path = Path.Combine(_pathProvider.GetDataPath(), "settings.ini");
+
+            var path = Path.Combine(_pathProvider.GetDataPath(), "settings.ini");
             _configSerializer.Load(this, path);
             _configSerializer.Save(this, path);
         }
-
-        private ILogger _logger;
-        private IPathProvider _pathProvider;
-        private ObjectSerializer _configSerializer;
 
         public void Save()
         {
             _configSerializer.Save(this, Path.Combine(_pathProvider.GetDataPath(), "settings.ini"));
         }
 
-        public Dictionary<string, string> GetSettingsAsHTML()
+        public Dictionary<string, string> GetSettingsAsHtml()
         {
-            return _configSerializer.GetSettingsAsHTML(this);
+            return _configSerializer.GetSettingsAsHtml(this);
         }
 
         public void SetFromDictionary(Dictionary<string, string> postData)

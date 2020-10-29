@@ -1,4 +1,4 @@
-﻿namespace StreamCoreTester
+﻿namespace ChatCoreTester
 {
     partial class Form1
     {

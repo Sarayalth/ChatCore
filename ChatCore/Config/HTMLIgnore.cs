@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ChatCore.Config
 {
-    [System.AttributeUsage(System.AttributeTargets.Field)]
-    public class HTMLIgnore : System.Attribute
+    [AttributeUsage(AttributeTargets.Field)]
+    public class HtmlIgnore : Attribute
     {
-        public HTMLIgnore()
-        {
-        }
     }
 }

@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ChatCore.Logging
 {
@@ -16,7 +14,7 @@ namespace ChatCore.Logging
         }
         public IDisposable BeginScope<TState>(TState state)
         {
-            return null;
+            return null!;
         }
 
         public bool IsEnabled(LogLevel logLevel)

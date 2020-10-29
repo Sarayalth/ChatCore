@@ -3,18 +3,23 @@ using ChatCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 
 namespace ChatCore.Services
 {
     public class ChatServiceManager : IChatServiceManager, IDisposable
     {
-        public bool IsRunning { get; set; } = false;
+
+	    private readonly ILogger _logger;
+	    private readonly IList<IChatServiceManager> _streamServiceManagers;
+	    private readonly IChatService _streamingService;
+
+        public bool IsRunning { get; } = false;
+
         public HashSet<Assembly> RegisteredAssemblies
         {
             get
             {
-                HashSet<Assembly> assemblies = new HashSet<Assembly>();
+                var assemblies = new HashSet<Assembly>();
                 foreach(var service in _streamServiceManagers)
                 {
                     assemblies.UnionWith(service.RegisteredAssemblies);
@@ -22,18 +27,13 @@ namespace ChatCore.Services
                 return assemblies;
             }
         }
-        private object _lock = new object();
 
         public ChatServiceManager(ILogger<ChatServiceManager> logger, IChatService streamingService, IList<IChatServiceManager> streamServiceManagers)
         {
-            _logger = logger;
-            _streamingService = streamingService;
-            _streamServiceManagers = streamServiceManagers;
+	        _logger = logger;
+	        _streamingService = streamingService;
+	        _streamServiceManagers = streamServiceManagers;
         }
-
-        private ILogger _logger;
-        private IList<IChatServiceManager> _streamServiceManagers;
-        private IChatService _streamingService;
 
         public void Start(Assembly assembly)
         {
@@ -57,7 +57,7 @@ namespace ChatCore.Services
         {
             foreach(var service in _streamServiceManagers)
             {
-                service.Stop(null);
+                service.Stop(null!);
             }
             _logger.LogInformation("Disposed");
         }

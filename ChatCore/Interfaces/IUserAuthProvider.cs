@@ -1,9 +1,5 @@
 ﻿using ChatCore.Models;
-using ChatCore.Models.OAuth;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ChatCore.Interfaces
 {
@@ -12,7 +8,5 @@ namespace ChatCore.Interfaces
         event Action<LoginCredentials> OnCredentialsUpdated;
         LoginCredentials Credentials { get; }
         void Save(bool callback = true);
-        Task MixerLogin();
-        Task<bool> TryRefreshMixerCredentials();
     }
 }

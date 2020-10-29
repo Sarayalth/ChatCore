@@ -1,15 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using ChatCore.Interfaces;
-using ChatCore.Services.Mixer;
 using ChatCore.Services.Twitch;
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Text;
 using System.Linq;
 using ChatCore.Models.Twitch;
-using ChatCore.Models;
+using ChatCore.Utilities;
 
 namespace ChatCore.Services
 {
@@ -18,16 +15,20 @@ namespace ChatCore.Services
     /// </summary>
     public class ChatServiceMultiplexer : ChatServiceBase, IChatService
     {
-        public string DisplayName { get; private set; } = "Generic";
+	    private readonly ILogger _logger;
+	    private readonly IList<IChatService> _streamingServices;
+	    private readonly TwitchService _twitchService;
+	    private readonly object _invokeLock = new object();
 
-        public ChatServiceMultiplexer(ILogger<ChatServiceMultiplexer> logger, IList<IChatService> streamingServices)
+	    public string DisplayName { get; }
+
+	    public ChatServiceMultiplexer(ILogger<ChatServiceMultiplexer> logger, IList<IChatService> streamingServices)
         {
             _logger = logger;
             _streamingServices = streamingServices;
             _twitchService = (TwitchService)streamingServices.First(s => s is TwitchService);
-            _mixerService = (MixerService)streamingServices.First(s => s is MixerService);
 
-            StringBuilder sb = new StringBuilder();
+            var displayNameBuilder = new StringBuilder();
             foreach (var service in _streamingServices)
             {
                 service.OnTextMessageReceived += Service_OnTextMessageReceived;
@@ -39,26 +40,22 @@ namespace ChatCore.Services
                 service.OnMessageCleared += Service_OnMessageCleared;
                 service.OnChannelResourceDataCached += Service_OnChannelResourceDataCached;
 
-                if(sb.Length > 0)
+                if(displayNameBuilder.Length > 0)
                 {
-                    sb.Append(", ");
+                    displayNameBuilder.Append(", ");
                 }
-                sb.Append(service.DisplayName);
-            }
-            DisplayName = sb.ToString();
-        }
 
-        private ILogger _logger;
-        private IList<IChatService> _streamingServices;
-        private TwitchService _twitchService;
-        private MixerService _mixerService;
-        private object _invokeLock = new object();
+                displayNameBuilder.Append(service.DisplayName);
+            }
+
+            DisplayName = displayNameBuilder.Length > 0 ? displayNameBuilder.ToString() : "Generic";
+        }
 
         private void Service_OnChannelResourceDataCached(IChatService svc, IChatChannel channel, Dictionary<string, IChatResourceData> resources)
         {
             lock (_invokeLock)
             {
-                _onChannelResourceDataCached.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, resources, _logger);
+                ChannelResourceDataCached.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, resources, _logger);
             }
         }
 
@@ -66,7 +63,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onMessageClearedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, messageId, _logger);
+                MessageClearedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, messageId, _logger);
             }
         }
 
@@ -74,7 +71,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onChatClearedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, userId, _logger);
+                ChatClearedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, userId, _logger);
             }
         }
 
@@ -82,7 +79,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onLoginCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, _logger);
+                LoginCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, _logger);
             }
         }
 
@@ -90,7 +87,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onLeaveRoomCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
+                LeaveRoomCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
             }
         }
 
@@ -98,7 +95,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onRoomStateUpdatedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
+                RoomStateUpdatedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
             }
         }
 
@@ -106,7 +103,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onTextMessageReceivedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, message, _logger);
+                TextMessageReceivedCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, message, _logger);
             }
         }
 
@@ -114,7 +111,7 @@ namespace ChatCore.Services
         {
             lock (_invokeLock)
             {
-                _onJoinRoomCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
+                JoinRoomCallbacks.InvokeAll(Assembly.GetCallingAssembly(), svc, channel, _logger);
             }
         }
 
@@ -129,11 +126,6 @@ namespace ChatCore.Services
         public TwitchService GetTwitchService()
         {
             return _twitchService;
-        }
-
-        public MixerService GetMixerService()
-        {
-            return _mixerService;
         }
     }
 }
