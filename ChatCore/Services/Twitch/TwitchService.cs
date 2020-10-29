@@ -1,15 +1,15 @@
-using ChatCore.Interfaces;
-using ChatCore.Models;
-using ChatCore.Models.Twitch;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using ChatCore.Interfaces;
+using ChatCore.Models;
+using ChatCore.Models.Twitch;
 using ChatCore.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace ChatCore.Services.Twitch
 {
