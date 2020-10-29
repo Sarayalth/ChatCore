@@ -317,7 +317,7 @@ namespace ChatCore.Services.Twitch
 
         internal void SendTextMessage(Assembly assembly, string message, string channel)
         {
-            _textMessageQueue.Enqueue(new KeyValuePair<Assembly, string>(assembly, $"@id={System.Guid.NewGuid().ToString()} PRIVMSG #{channel} :{message}"));
+            _textMessageQueue.Enqueue(new KeyValuePair<Assembly, string>(assembly, $"@id={Guid.NewGuid().ToString()} PRIVMSG #{channel} :{message}"));
         }
 
         public void SendTextMessage(string message, string channel)
