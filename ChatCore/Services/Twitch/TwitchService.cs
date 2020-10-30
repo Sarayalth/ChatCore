@@ -1,10 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Timer = System.Timers.Timer;
+using System.Timers;
 using ChatCore.Interfaces;
 using ChatCore.Models;
 using ChatCore.Models.Twitch;
@@ -22,7 +24,8 @@ namespace ChatCore.Services.Twitch
 	    private readonly TwitchMessageParser _messageParser;
 	    private readonly TwitchDataProvider _dataProvider;
 	    private readonly IWebSocketService _websocketService;
-	    private readonly IUserAuthProvider _authManager;
+		private readonly IWebSocketService _pubsubWssService;
+		private readonly IUserAuthProvider _authManager;
 
 	    private readonly object _messageReceivedLock;
 	    private readonly object _initLock;
@@ -34,8 +37,10 @@ namespace ChatCore.Services.Twitch
 	    private int _currentMessageCount;
 	    private DateTime _lastResetTime = DateTime.UtcNow;
 	    private readonly ConcurrentQueue<KeyValuePair<Assembly, string>> _textMessageQueue = new ConcurrentQueue<KeyValuePair<Assembly, string>>();
+		private Timer _pubsubPingTimer = new Timer();
+		private TwitchMessage _rewardMessage;
 
-	    private string UserName => string.IsNullOrEmpty(_authManager.Credentials.Twitch_OAuthToken) ? _anonUsername : "@";
+		private string UserName => string.IsNullOrEmpty(_authManager.Credentials.Twitch_OAuthToken) ? _anonUsername : "@";
 	    private string OAuthToken => string.IsNullOrEmpty(_authManager.Credentials.Twitch_OAuthToken) ? string.Empty : _authManager.Credentials.Twitch_OAuthToken;
 
 	    public ReadOnlyDictionary<string, IChatChannel> Channels { get; }
@@ -49,13 +54,14 @@ namespace ChatCore.Services.Twitch
             remove => _rawMessageReceivedCallbacks.RemoveAction(Assembly.GetCallingAssembly(), value);
         }
 
-        public TwitchService(ILogger<TwitchService> logger, TwitchMessageParser messageParser, TwitchDataProvider twitchDataProvider, IWebSocketService websocketService, IUserAuthProvider authManager, Random rand)
+        public TwitchService(ILogger<TwitchService> logger, TwitchMessageParser messageParser, TwitchDataProvider twitchDataProvider, IWebSocketService websocketService, IWebSocketService pubsubWssService, IUserAuthProvider authManager, Random rand)
         {
 	        _logger = logger;
             _messageParser = messageParser;
             _dataProvider = twitchDataProvider;
             _websocketService = websocketService;
-            _authManager = authManager;
+			_pubsubWssService = pubsubWssService;
+			_authManager = authManager;
 
             _rawMessageReceivedCallbacks = new ConcurrentDictionary<Assembly, Action<IChatService, string>>();
             _channels = new ConcurrentDictionary<string, IChatChannel>();
@@ -71,7 +77,12 @@ namespace ChatCore.Services.Twitch
             _websocketService.OnClose += _websocketService_OnClose;
             _websocketService.OnError += _websocketService_OnError;
             _websocketService.OnMessageReceived += _websocketService_OnMessageReceived;
-        }
+
+			_pubsubWssService.OnOpen += _pubsubWssService_OnOpen;
+			_pubsubWssService.OnClose += _pubsubWssService_OnClose;
+			_pubsubWssService.OnError += _pubsubWssService_OnError;
+			_pubsubWssService.OnMessageReceived += _pubsubWssService_OnMessageReceived;
+		}
 
         private void _authManager_OnCredentialsUpdated(LoginCredentials credentials)
         {
@@ -93,7 +104,7 @@ namespace ChatCore.Services.Twitch
                 {
                     _isStarted = true;
                     _websocketService.Connect("wss://irc-ws.chat.twitch.tv:443", forceReconnect);
-                    Task.Run(ProcessQueuedMessages);
+					Task.Run(ProcessQueuedMessages);
                 }
             }
         }
@@ -114,7 +125,8 @@ namespace ChatCore.Services.Twitch
 	            _loggedInUsername = null;
 
 	            _websocketService.Disconnect();
-            }
+				_pubsubWssService.Disconnect();
+			}
         }
 
         private void _websocketService_OnMessageReceived(Assembly assembly, string rawMessage)
@@ -149,7 +161,8 @@ namespace ChatCore.Services.Twitch
                                 _loggedInUsername = twitchMessage.Channel.Id;
                                 // This isn't a typo, when you first sign in your username is in the channel id.
                                 _logger.LogInformation($"Logged into Twitch as {_loggedInUsername}");
-                                _websocketService.ReconnectDelay = 500;
+								_pubsubWssService.Connect("wss://pubsub-edge.twitch.tv"); // Here because it needs _loggedInUsername to not be null
+								_websocketService.ReconnectDelay = 500;
                                 LoginCallbacks?.InvokeAll(assembly!, this, _logger);
                                 foreach (var channel in _authManager.Credentials.Twitch_Channels)
                                 {
@@ -169,7 +182,10 @@ namespace ChatCore.Services.Twitch
                             case "PRIVMSG":
                                 TextMessageReceivedCallbacks?.InvokeAll(assembly!, this, twitchMessage, _logger);
                                 continue;
-                            case "JOIN":
+							case "REWARD":
+								_rewardMessage = twitchMessage;
+								continue;
+							case "JOIN":
                                 //_logger.LogInformation($"{twitchMessage.Sender.Name} JOINED {twitchMessage.Channel.Id}. LoggedInuser: {LoggedInUser.Name}");
                                 if (twitchMessage.Sender.UserName == _loggedInUsername)
                                 {
@@ -248,7 +264,110 @@ namespace ChatCore.Services.Twitch
             TryLogin();
         }
 
-        private void TryLogin()
+		private void _pubsubWssService_OnMessageReceived(Assembly assembly, string rawMessage)
+		{
+			lock (_messageReceivedLock)
+			{
+				try
+				{
+					//_logger.LogInformation("RawMessage: " + rawMessage);
+					_rawMessageReceivedCallbacks?.InvokeAll(assembly, this, rawMessage);
+					var rawJson = JSON.Parse(rawMessage);
+					var messageType = rawJson["type"].Value;
+
+					if (messageType == "PONG")
+					{
+						_logger.LogInformation("PubSub PONG");
+						return;
+					}
+					else if (messageType == "RESPONSE")
+					{
+						if (rawJson["error"].Value != "")
+						{
+							_logger.LogError($"{rawJson["error"].Value} on PubSub RESPONSE");
+							if (rawJson["error"].Value == "ERR_BADAUTH")
+							{
+								_logger.LogError("Your OAuth token doesn't have the required topic to access Channel Point Rewards");
+							}
+							if (rawJson["error"].Value == "ERR_BADTOPIC" || rawJson["error"].Value == "Invalid Topic")
+							{
+								_logger.LogError("Invalid topic detected on you OAuth token");
+							}
+							_pubsubPingTimer.Stop();
+							_pubsubWssService.Disconnect();
+						}
+						return;
+					}
+					else if (messageType == "RECONNECT")
+					{
+						_pubsubWssService.Disconnect();
+						_pubsubWssService.Connect("wss://pubsub-edge.twitch.tv");
+						return;
+					}
+					else if (messageType == "MESSAGE")
+					{
+						//_logger.LogInformation(rawJson["data"]["message"].Value);
+						if (_messageParser.ParsePubSubMessage(rawJson, _rewardMessage, out var parsedMessages))
+						{
+							_rewardMessage = null;
+							foreach (TwitchMessage twitchMessage in parsedMessages)
+							{
+								TextMessageReceivedCallbacks?.InvokeAll(assembly, this, twitchMessage, _logger);
+							}
+						}
+					}
+				}
+				catch (Exception e)
+				{
+					_logger.LogError(e.ToString());
+				}
+			}
+		}
+
+		private void _pubsubWssService_OnClose()
+		{
+			_logger.LogInformation("PubSub connection closed");
+		}
+
+		private void _pubsubWssService_OnError()
+		{
+			_logger.LogError("An error occurred in PubSub connection");
+		}
+
+		private void _pubsubWssService_OnOpen()
+		{
+			Task.Run(async () => await _dataProvider.GetChannelIdFromUsername(_loggedInUsername)).ContinueWith(x =>
+			{
+				var oauth = OAuthToken;
+				if (OAuthToken.StartsWith("oauth:"))
+				{
+					oauth = OAuthToken.Replace("oauth:", "");
+				}
+				_logger.LogInformation("PubSub connection opened");
+				_pubsubPingTimer.Interval = 180000;
+				_pubsubPingTimer.Elapsed += _pubsubPingTimer_Elapsed;
+				_pubsubPingTimer.Start();
+
+				var data = new JSONObject();
+				data["type"] = "LISTEN";
+				JSONNode topics = new JSONArray();
+				topics.AsArray.Add($"channel-points-channel-v1.{x.Result}");
+				data["data"].Add("topics", topics);
+				data["data"]["auth_token"] = oauth;
+
+				_pubsubWssService.SendMessage(data.ToString());
+			});
+		}
+
+		private void _pubsubPingTimer_Elapsed(object sender, ElapsedEventArgs e)
+		{
+			_logger.LogInformation("PubSub PING");
+			var data = new JSONObject();
+			data.Add("type", new JSONString("PING"));
+			_pubsubWssService.SendMessage(data.ToString());
+		}
+
+		private void TryLogin()
         {
             _logger.LogInformation("Trying to login!");
             if (!string.IsNullOrEmpty(OAuthToken))

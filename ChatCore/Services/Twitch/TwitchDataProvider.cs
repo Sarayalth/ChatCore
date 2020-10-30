@@ -1,12 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using ChatCore.Interfaces;
 using ChatCore.Models.Twitch;
+using ChatCore.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ChatCore.Models;
 using System.Threading;
+using System.Net.Http;
+using System.Net;
 
 namespace ChatCore.Services.Twitch
 {
@@ -23,6 +26,8 @@ namespace ChatCore.Services.Twitch
 		private readonly HashSet<string> _channelDataCached = new HashSet<string>();
 		private readonly SemaphoreSlim _globalLock;
 		private readonly SemaphoreSlim _channelLock;
+
+		private static HttpClient _httpClient = new HttpClient();
 
 		public TwitchDataProvider(ILogger<TwitchDataProvider> logger, TwitchBadgeProvider twitchBadgeProvider, TwitchCheermoteProvider twitchCheermoteProvider, BTTVDataProvider bttvDataProvider,
 			FFZDataProvider ffzDataProvider)
@@ -212,6 +217,42 @@ namespace ChatCore.Services.Twitch
 
 			badge = null!;
 			return false;
+		}
+
+		public async Task<string> GetChannelIdFromUsername(string username)
+		{
+			try
+			{
+				var httpRequestMessage = new HttpRequestMessage
+				{
+					Method = HttpMethod.Get,
+					RequestUri = new Uri($"https://api.twitch.tv/kraken/users?login={username}"),
+					Headers =
+				{
+					{ HttpRequestHeader.Accept.ToString(), "application/vnd.twitchtv.v5+json"},
+					{ "client-id", TWITCH_CLIENT_ID}
+				}
+				};
+				var resp = _httpClient.SendAsync(httpRequestMessage).Result;
+				if (resp.IsSuccessStatusCode)
+				{
+					var json = JSON.Parse(await resp.Content.ReadAsStringAsync());
+					if (json != null)
+					{
+						return json["users"][0]["_id"].Value;
+					}
+				}
+				else
+				{
+					_logger.LogWarning($"Error trying to get channel id for {username}! Status code: {resp.StatusCode}, Error: {await resp.Content.ReadAsStringAsync()}");
+				}
+				return null;
+			}
+			catch (Exception e)
+			{
+				_logger.LogInformation(e.ToString());
+				return null;
+			}
 		}
 	}
 }

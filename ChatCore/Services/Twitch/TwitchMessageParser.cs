@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using ChatCore.Interfaces;
 using ChatCore.Models.Twitch;
 using System;
@@ -280,7 +280,19 @@ namespace ChatCore.Services.Twitch
                         Type = messageType
                     };
 
-                    if(messageMeta.TryGetValue("msg-id", out var msgIdValue))
+					if (messageMeta.TryGetValue("custom-reward-id", out var rewardId))
+					{
+						var rewardMessage = (TwitchMessage)newMessage.Clone();
+						rewardMessage.Type = "REWARD";
+						rewardMessage.Id = rewardId;
+						messages.Add(rewardMessage);
+						stopwatch.Stop();
+						_logger.LogDebug($"Successfully parsed {messages.Count} messages in {(decimal)stopwatch.ElapsedTicks / TimeSpan.TicksPerMillisecond}ms");
+						parsedMessages = messages.ToArray();
+						return true;
+					}
+
+					if (messageMeta.TryGetValue("msg-id", out var msgIdValue))
                     {
                         TwitchMessage? systemMessage;
                         //_logger.LogInformation($"msg-id: {msgIdValue}");
@@ -386,5 +398,108 @@ namespace ChatCore.Services.Twitch
             _logger.LogInformation("No messages were parsed successfully.");
             return false;
         }
-    }
+
+		public bool ParsePubSubMessage(JSONNode rawJson, TwitchMessage rewardMessage, out IChatMessage[] parsedMessages)
+		{
+			parsedMessages = null;
+			var messages = new List<IChatMessage>();
+			try
+			{
+				var messageType = rawJson["type"].Value;
+
+				//_logger.LogInformation(rawJson["data"]["message"].Value);
+
+				var msgJson = JSON.Parse(rawJson["data"]["message"]);
+				var newMessage = new TwitchMessage()
+				{
+					Id = msgJson["data"]["redemption"]["reward"]["id"].Value,
+					Sender = new TwitchUser()
+					{
+						Id = msgJson["data"]["user"]["id"].Value,
+						UserName = msgJson["data"]["user"]["login"].Value,
+						DisplayName = msgJson["data"]["user"]["display_name"].Value,
+						Color = "#FFFFFF",
+						IsModerator = false,
+						IsBroadcaster = false,
+						IsSubscriber = false,
+						IsTurbo = false,
+						IsVip = false,
+						Badges = new IChatBadge[0]
+					},
+					Channel = new TwitchChannel()
+					{
+						Id = msgJson["data"]["reward"]["channel_id"].Value,
+						Name = msgJson["data"]["user"]["login"].Value,
+						Roomstate = null
+					},
+					Emotes = new List<IChatEmote>().ToArray(),
+					Message = $"{msgJson["data"]["redemption"]["user"]["display_name"].Value} redeemed {msgJson["data"]["redemption"]["reward"]["title"].Value}",
+					IsActionMessage = false,
+					IsSystemMessage = true,
+					IsHighlighted = true,
+					IsPing = false,
+					Bits = 0,
+					Metadata = null,
+					Type = messageType
+				};
+
+				if (msgJson["data"]["redemption"]["reward"]["image"] != null)
+				{
+					var emoteId = $"{msgJson["data"]["redemption"]["reward"]["id"].Value}-custom";
+					newMessage.Emotes = new IChatEmote[]
+					{
+									new TwitchEmote()
+									{
+										Id = emoteId,
+										Name = $"[{emoteId}]",
+										Uri = msgJson["data"]["redemption"]["reward"]["image"]["url_4x"].Value,
+										StartIndex = 0,
+										EndIndex = emoteId.Length + 1,
+										IsAnimated = false,
+										Bits = 0,
+										Color = ""
+									}
+					};
+				}
+				else
+				{
+					var emoteId = "default-reward";
+					newMessage.Emotes = new IChatEmote[]
+					{
+									new TwitchEmote()
+									{
+										Id = emoteId,
+										Name = $"[{emoteId}]",
+										Uri = msgJson["data"]["redemption"]["reward"]["default_image"]["url_4x"].Value,
+										StartIndex = 0,
+										EndIndex = emoteId.Length + 1,
+										IsAnimated = false,
+										Bits = 0,
+										Color = ""
+									}
+					};
+				}
+				newMessage.Message = $"{newMessage.Emotes[0].Name}  {newMessage.Message}";
+				if (rewardMessage != null)
+				{
+					newMessage.Message = $"{newMessage.Emotes[0].Name}  Redeemed {msgJson["data"]["redemption"]["reward"]["title"].Value}";
+					messages.Add(newMessage);
+					messages.Add(rewardMessage);
+					parsedMessages = messages.ToArray();
+					return true;
+				}
+				else
+				{
+					messages.Add(newMessage);
+					parsedMessages = messages.ToArray();
+					return true;
+				}
+			}
+			catch (Exception e)
+			{
+				_logger.LogError(e.ToString());
+				return false;
+			}
+		}
+	}
 }
